@@ -38,6 +38,9 @@ return [
     // Email notifications through PHP mail() (works on Hostinger). Leave 'from' empty to turn off.
     'mail_from' => '',
 
+    // Show the technical error message on the error page. Turn on only while fixing a problem.
+    'debug' => false,
+
     // Public emergency page: max views per IP per minute
     'public_rate_limit' => 20,
     // Login / sign-up attempts per IP per 15 minutes

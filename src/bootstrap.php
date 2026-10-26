@@ -57,8 +57,20 @@ if (PHP_SAPI !== 'cli') {
     set_exception_handler(function (Throwable $ex) {
         error_log((string)$ex);
         if (!headers_sent()) http_response_code(500);
+        // Setup problems get a clear hint; anything else stays generic unless 'debug' is on in config.php
+        $code = $ex instanceof PDOException ? (string)($ex->errorInfo[1] ?? $ex->getCode()) : '';
+        $msg = match (true) {
+            in_array($code, ['1045', '1044', '1049', '2002', '2005'], true)
+                => 'Cannot connect to the database. Check the db settings (name, user, password, host) in config.php.',
+            $code === '1146' || $code === '42S02'
+                => 'The database tables are missing. Set install_key in config.php, then open /install to create them.',
+            default => 'Something went wrong. Please try again in a moment.',
+        };
+        if (config('debug', false)) {
+            $msg .= "\n\n" . $ex->getMessage() . "\n" . $ex->getFile() . ':' . $ex->getLine();
+        }
         echo '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
-           . '<p style="font-family:sans-serif;padding:2rem">Something went wrong. Please try again in a moment.</p>';
+           . '<pre style="font-family:sans-serif;padding:2rem;white-space:pre-wrap">' . htmlspecialchars($msg) . '</pre>';
     });
 }
 
