@@ -334,4 +334,12 @@ return [
     'cart.plan_starts' => 'الاشتراك بيبدأ أول ما يتأكد الدفع.',
     'plans.add_to_cart' => 'أضف للسلة',
     'admin.plan_in_order' => 'يتفعّل عند دفع الطلب',
+
+    // Paymob
+    'paymob.pay_online' => 'ادفع :amount أونلاين',
+    'paymob.methods' => 'كارت أو محفظة موبايل، مؤمّن بواسطة Paymob',
+    'paymob.or_manual' => 'أو ادفع بالتحويل',
+    'paymob.start_failed' => 'الدفع أونلاين غير متاح حاليًا. حاول بعد دقايق أو ادفع بالتحويل.',
+    'paymob.confirming' => 'تم استلام الدفع وجاري تأكيده، الصفحة هتتحدث خلال لحظات.',
+    'paymob.declined' => 'الدفع لم يكتمل. تقدر تحاول تاني بكارت أو محفظة تانية.',
 ];

@@ -27,14 +27,20 @@ Without an active subscription (or before the parent ticks the consent box), the
 - **Users**: search parents, see their children, devices, payments and orders, disable an account, give a free subscription, add other admins.
 - **Products and plans**: edit names, descriptions, prices, photos and visibility.
 
-## Payments (gateway later)
+## Payments (Paymob)
 
-Every charge is a row in `payments`. Until a gateway is connected, the parent sees the transfer instructions from `config.php` (InstaPay or Vodafone Cash) and an admin confirms the payment. To connect Paymob, Fawry, Kashier or another gateway, see the comment at the top of `src/billing.php`:
+Parents pay online through **Paymob Unified Checkout** (cards and mobile wallets). The code is in `src/paymob.php`:
 
-1. return the gateway's checkout URL from `payment_checkout_url()`;
-2. add a callback route that verifies the gateway's signature, then calls `payment_mark_paid($paymentId, $reference)`.
+1. **"Pay online"** on the payment page creates a Paymob *Intention* for the exact amount (after any promo code) and sends the parent to Paymob's checkout.
+2. Paymob calls **`/paymob/callback`** (Transaction Processed callback). The HMAC (SHA-512 over the 20 signed fields) is checked, as are the amount and currency, and then `payment_mark_paid()` activates the subscription or order. Retries are safe. Refund and void callbacks mark the payment refunded.
+3. The parent's browser comes back to **`/paymob/return`**. It is HMAC-checked too and confirms the payment if the callback hasn't arrived yet.
 
-That one function activates subscriptions and orders, so nothing else has to change.
+A declined card leaves the payment waiting, so the parent can try again. Manual transfer (InstaPay / Vodafone Cash, confirmed by an admin) can stay available as an alternative: `paymob.manual` in `config.php`.
+
+**Setup (Paymob dashboard → https://eg.dashboard.paymob.com):**
+- Fill in the `paymob` block in `config.php`: secret key, public key, HMAC secret, integration IDs (card and wallet), then `'enabled' => true`.
+- On **every payment integration**, set the *Transaction processed callback* to `https://YOUR-DOMAIN/paymob/callback` and the *Transaction response callback* to `https://YOUR-DOMAIN/paymob/return`. The intention also sends these URLs.
+- Use test keys and test integration IDs first (Paymob's test cards), then switch to the live ones after Paymob approves your account.
 
 ## Install on Hostinger
 

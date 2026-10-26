@@ -23,13 +23,23 @@
       <button class="btn" type="submit"><?= e(t('promo.apply')) ?></button>
     </form>
   <?php endif; ?>
-  <?php if ($payment['status'] === 'pending'): ?>
-    <div class="hint warn" style="font-size:1rem">
-      <strong><?= e(t('pay.how')) ?></strong><br>
-      <?= e(config('payment.instructions_' . current_lang(), config('payment.instructions_en', ''))) ?>
-      <br><?= e(t('pay.use_ref', ['ref' => 'MKW-' . $payment['id']])) ?>
-    </div>
-    <p class="hint" style="margin-top:.75rem"><?= e(t('pay.online_soon')) ?></p>
+  <?php if ($payment['status'] === 'pending'):
+    $online = paymob_enabled();
+    $manual = !$online || config('paymob.manual', true); ?>
+    <?php if ($online): ?>
+      <form method="post" action="/payments/<?= e($payment['id']) ?>/paymob" class="pay-online">
+        <?= csrf_field() ?>
+        <button class="btn btn-primary btn-block" type="submit"><?= icon('card') ?> <?= e(t('paymob.pay_online', ['amount' => money($payment['amount'])])) ?></button>
+        <p class="hint center"><?= icon('lock') ?> <?= e(t('paymob.methods')) ?></p>
+      </form>
+    <?php endif; ?>
+    <?php if ($manual): ?>
+      <div class="hint warn" style="font-size:1rem">
+        <strong><?= e($online ? t('paymob.or_manual') : t('pay.how')) ?></strong><br>
+        <?= e(config('payment.instructions_' . current_lang(), config('payment.instructions_en', ''))) ?>
+        <br><?= e(t('pay.use_ref', ['ref' => 'MKW-' . $payment['id']])) ?>
+      </div>
+    <?php endif; ?>
   <?php elseif ($payment['status'] === 'failed' || $payment['status'] === 'refunded'): ?>
     <div class="flash flash-error"><?= e(t('pay.failed_text')) ?></div>
   <?php elseif ($payment['status'] === 'paid'): ?>

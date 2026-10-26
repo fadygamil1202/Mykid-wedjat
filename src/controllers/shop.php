@@ -222,10 +222,6 @@ function payment_show(int $id): void
     $user = require_parent();
     $payment = q_one('SELECT * FROM payments WHERE id=? AND user_id=?', [$id, $user['id']]);
     if (!$payment) abort(404);
-    if ($payment['status'] === 'pending' && ($url = payment_checkout_url($payment))) {
-        header('Location: ' . $url);
-        exit;
-    }
     $what = match ($payment['kind']) {
         'subscription' => (function () use ($payment) {
             $s = q_one('SELECT p.* FROM subscriptions s JOIN plans p ON p.id=s.plan_id WHERE s.id=?', [$payment['ref_id']]);

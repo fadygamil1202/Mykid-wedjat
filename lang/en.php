@@ -334,4 +334,12 @@ return [
     'cart.plan_starts' => 'The subscription starts as soon as the payment is confirmed.',
     'plans.add_to_cart' => 'Add to cart',
     'admin.plan_in_order' => 'activates when this order is paid',
+
+    // Paymob
+    'paymob.pay_online' => 'Pay :amount online',
+    'paymob.methods' => 'Card or mobile wallet, secured by Paymob',
+    'paymob.or_manual' => 'Or pay by transfer',
+    'paymob.start_failed' => 'Online payment is not available right now. Please try again in a few minutes or pay by transfer.',
+    'paymob.confirming' => 'Payment received. We are confirming it, this page will update in a moment.',
+    'paymob.declined' => 'The payment did not go through. You can try again with another card or wallet.',
 ];
