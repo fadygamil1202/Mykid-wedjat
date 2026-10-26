@@ -100,6 +100,6 @@ $links = match (true) {
   <a class="<?= $on('/account') ?: $on('/orders') ?>" href="/account"><?= icon('settings') ?><?= e(t('nav.account_short')) ?></a>
 </nav>
 <?php endif; ?>
-<script src="/assets/app.js?v=2"></script>
+<script src="/assets/app.js?v=3"></script>
 </body>
 </html>
