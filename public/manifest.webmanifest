@@ -1,0 +1,9 @@
+{
+  "name": "MyKid Wedjat",
+  "short_name": "Wedjat",
+  "start_url": "./dashboard",
+  "display": "standalone",
+  "background_color": "#FBF7EF",
+  "theme_color": "#1B3F8F",
+  "icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

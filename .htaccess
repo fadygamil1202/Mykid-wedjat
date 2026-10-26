@@ -1,0 +1,10 @@
+# Hostinger / Apache: upload this whole folder into public_html.
+# Every request is sent into public/, so config.php, src/, views/ etc. are never served directly.
+Options -Indexes
+RewriteEngine On
+RewriteCond %{REQUEST_URI} !/public/
+RewriteRule ^(.*)$ public/$1 [L]
+
+<FilesMatch "^(config(\.example)?\.php|.*\.sql|.*\.md)$">
+  Require all denied
+</FilesMatch>

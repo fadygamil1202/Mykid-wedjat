@@ -1,0 +1,5 @@
+# Uploaded product images only: never run scripts from here
+Options -Indexes
+<FilesMatch "\.(?!(jpe?g|png|webp)$)[^.]+$">
+  Require all denied
+</FilesMatch>
