@@ -281,6 +281,10 @@ td .row { flex-wrap: nowrap; }
 .upsell form { margin: 0; }
 .plan form + form { margin-top: .4rem; }
 
+/* Online payment */
+.pay-online { margin: 0 0 1rem; }
+.pay-online .hint { margin: .5rem 0 0; }
+
 /* Timeline */
 .timeline { display: flex; gap: .25rem; margin: .5rem 0 1rem; }
 .timeline span { flex: 1; height: 8px; border-radius: 999px; background: var(--line); }

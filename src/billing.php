@@ -4,12 +4,8 @@ declare(strict_types=1);
 /*
  * Subscriptions, orders and payments.
  *
- * Every charge is a row in `payments`. Today the provider is 'manual': the parent
- * sees transfer instructions and an admin marks the payment as paid. To connect a
- * gateway (Paymob, Fawry, Kashier, ...):
- *   1. In payment_checkout_url(), create the gateway's checkout session and return its URL.
- *   2. Add a callback route that verifies the gateway's signature, then calls
- *      payment_mark_paid($paymentId, $gatewayReference).
+ * Every charge is a row in `payments`. Parents pay online through Paymob (src/paymob.php)
+ * or, if enabled, by manual transfer that an admin confirms. Either way
  * payment_mark_paid() is the single place that activates subscriptions and orders.
  */
 
@@ -31,12 +27,6 @@ function payment_create(int $userId, string $kind, int $refId, float $amount): i
     q('INSERT INTO payments (user_id, kind, ref_id, amount, currency, provider) VALUES (?,?,?,?,?,?)',
       [$userId, $kind, $refId, $amount, config('currency', 'EGP'), config('payment.provider', 'manual')]);
     return (int)db()->lastInsertId();
-}
-
-/** Where to send the parent to pay. Returns null while payments are manual. */
-function payment_checkout_url(array $payment): ?string
-{
-    return null;
 }
 
 // ---------- Promo codes ----------

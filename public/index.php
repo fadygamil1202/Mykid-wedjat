@@ -59,6 +59,9 @@ $routes = [
     ['POST', '#^/subscription$#',                     'subscription_start'],
     ['GET',  '#^/payments/(\d+)$#',                   'payment_show'],
     ['POST', '#^/payments/(\d+)/promo$#',             'payment_promo_apply'],
+    ['POST', '#^/payments/(\d+)/paymob$#',            'payment_paymob_start'],
+    ['POST', '#^/paymob/callback$#',                  'paymob_callback'],
+    ['GET',  '#^/paymob/return$#',                    'paymob_return'],
     ['POST', '#^/payments/(\d+)/promo/remove$#',      'payment_promo_remove'],
     ['GET',  '#^/cart$#',                             'cart_show'],
     ['POST', '#^/cart$#',                             'cart_add'],
@@ -109,7 +112,8 @@ foreach ($routes as [$m, $pattern, $handler]) {
     if (preg_match($pattern, $path, $matches)) {
         if ($m !== $method) continue;
         array_shift($matches);
-        if ($method === 'POST') verify_csrf();
+        // Paymob's server calls the callback directly; it is verified by HMAC instead
+        if ($method === 'POST' && $handler !== 'paymob_callback') verify_csrf();
         // Cast each captured value to the handler's declared parameter type (int ids, string tokens)
         $params = (new ReflectionFunction($handler))->getParameters();
         $args = [];

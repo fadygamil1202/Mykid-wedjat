@@ -31,6 +31,19 @@ return [
         'instructions_ar' => 'حوّل المبلغ عن طريق InstaPay أو فودافون كاش على الرقم 01000000000 واكتب رقم الدفع في الملاحظة. سيتم التفعيل خلال ٢٤ ساعة.',
     ],
 
+    // Paymob online payments (Unified Checkout). Dashboard: https://eg.dashboard.paymob.com
+    // Settings > Account info: secret key, public key, HMAC secret. Payment integrations: integration IDs.
+    // Use the TEST keys and test integration IDs until Paymob approves your account.
+    'paymob' => [
+        'enabled'         => false,
+        'secret_key'      => '',          // egy_sk_test_... / egy_sk_live_...
+        'public_key'      => '',          // egy_pk_test_... / egy_pk_live_...
+        'hmac_secret'     => '',
+        'integration_ids' => [],          // e.g. [1234567, 7654321]  (card, mobile wallet)
+        'base_url'        => 'https://accept.paymob.com',
+        'manual'          => true,        // also show the manual transfer instructions as an alternative
+    ],
+
     // Support contact shown on the site
     'support_phone' => '+201279792658',
     'support_email' => 'support@example.com',
