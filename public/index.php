@@ -59,10 +59,12 @@ $routes = [
     ['POST', '#^/subscription$#',                     'subscription_start'],
     ['GET',  '#^/payments/(\d+)$#',                   'payment_show'],
     ['POST', '#^/payments/(\d+)/promo$#',             'payment_promo_apply'],
-    ['POST', '#^/payments/(\d+)/paymob$#',            'payment_paymob_start'],
-    ['GET',  '#^/payments/(\d+)/paymob$#',            'payment_paymob_go'],
+    ['POST', '#^/payments/(\d+)/pay$#',               'payment_online_start'],
+    ['GET',  '#^/payments/(\d+)/pay$#',               'payment_online_go'],
     ['POST', '#^/paymob/callback$#',                  'paymob_callback'],
     ['GET',  '#^/paymob/return$#',                    'paymob_return'],
+    ['POST', '#^/xpay/webhook$#',                     'xpay_webhook'],
+    ['GET',  '#^/xpay/return/(cs_(?:test|live)_[A-Za-z0-9]+)$#', 'xpay_return'],
     ['POST', '#^/payments/(\d+)/promo/remove$#',      'payment_promo_remove'],
     ['GET',  '#^/cart$#',                             'cart_show'],
     ['POST', '#^/cart$#',                             'cart_add'],
@@ -113,8 +115,8 @@ foreach ($routes as [$m, $pattern, $handler]) {
     if (preg_match($pattern, $path, $matches)) {
         if ($m !== $method) continue;
         array_shift($matches);
-        // Paymob's server calls the callback directly; it is verified by HMAC instead
-        if ($method === 'POST' && $handler !== 'paymob_callback') verify_csrf();
+        // Gateways call these directly; they are verified by their signatures instead
+        if ($method === 'POST' && !in_array($handler, ['paymob_callback', 'xpay_webhook'], true)) verify_csrf();
         // Cast each captured value to the handler's declared parameter type (int ids, string tokens)
         $params = (new ReflectionFunction($handler))->getParameters();
         $args = [];

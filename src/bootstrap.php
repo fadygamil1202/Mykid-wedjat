@@ -51,6 +51,8 @@ require __DIR__ . '/auth.php';
 require __DIR__ . '/access.php';
 require __DIR__ . '/billing.php';
 require __DIR__ . '/paymob.php';
+require __DIR__ . '/xpay.php';
+require __DIR__ . '/online.php';
 
 // Never show stack traces (or database details) to visitors
 if (PHP_SAPI !== 'cli') {
@@ -80,7 +82,5 @@ if (PHP_SAPI !== 'cli') {
     header('X-Content-Type-Options: nosniff');
     header('X-Frame-Options: DENY');
     header('Referrer-Policy: no-referrer');
-    // form-action also allows Paymob, because "Pay online" redirects to its checkout page
-    $paymob = rtrim((string)config('paymob.base_url', 'https://accept.paymob.com'), '/');
-    header("Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src https://fonts.gstatic.com; script-src 'self'; form-action 'self' tel: {$paymob}; frame-ancestors 'none'");
+    header("Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src https://fonts.gstatic.com; script-src 'self'; form-action 'self' tel:; frame-ancestors 'none'");
 }
