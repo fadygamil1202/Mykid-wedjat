@@ -342,4 +342,7 @@ return [
     'paymob.start_failed' => 'Online payment is not available right now. Please try again in a few minutes or pay by transfer.',
     'paymob.confirming' => 'Payment received. We are confirming it, this page will update in a moment.',
     'paymob.declined' => 'The payment did not go through. You can try again with another card or wallet.',
+    'paymob.redirect_title' => 'Taking you to Paymob…',
+    'paymob.redirect_text' => 'You will pay securely on Paymob, then come back here automatically.',
+    'paymob.redirect_btn' => 'Continue to payment',
 ];

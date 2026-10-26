@@ -190,12 +190,24 @@ function payment_paymob_start(int $id): void
         $url = paymob_checkout_url($payment);
     } catch (Throwable $ex) {
         error_log((string)$ex);
-        flash('error', t('paymob.start_failed'));
+        flash('error', t('paymob.start_failed') . (config('debug', false) ? ' — ' . $ex->getMessage() : ''));
         redirect("payments/{$id}");
     }
     $_SESSION['paymob_payment'] = $id; // to find the payment again when the browser comes back
-    header('Location: ' . $url);
-    exit;
+    $_SESSION['paymob_url'] = $url;
+    // Go through our own page instead of redirecting the form to Paymob: browsers block a
+    // form submission that ends on another site (CSP form-action), which looked like "nothing happens".
+    redirect("payments/{$id}/paymob");
+}
+
+/** GET /payments/{id}/paymob: "Taking you to Paymob…" page that opens the checkout as a normal link. */
+function payment_paymob_go(int $id): void
+{
+    require_parent();
+    $url = (string)($_SESSION['paymob_url'] ?? '');
+    unset($_SESSION['paymob_url']);
+    if (!str_starts_with($url, paymob_base() . '/')) redirect("payments/{$id}");
+    view('billing/paymob_redirect', ['title' => t('pay.title'), 'url' => $url, 'paymentId' => $id], 'layout_plain');
 }
 
 /** POST /paymob/callback: Transaction Processed callback from Paymob (no CSRF, no session). */

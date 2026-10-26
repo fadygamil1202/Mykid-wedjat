@@ -60,6 +60,7 @@ $routes = [
     ['GET',  '#^/payments/(\d+)$#',                   'payment_show'],
     ['POST', '#^/payments/(\d+)/promo$#',             'payment_promo_apply'],
     ['POST', '#^/payments/(\d+)/paymob$#',            'payment_paymob_start'],
+    ['GET',  '#^/payments/(\d+)/paymob$#',            'payment_paymob_go'],
     ['POST', '#^/paymob/callback$#',                  'paymob_callback'],
     ['GET',  '#^/paymob/return$#',                    'paymob_return'],
     ['POST', '#^/payments/(\d+)/promo/remove$#',      'payment_promo_remove'],
