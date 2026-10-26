@@ -146,11 +146,8 @@ function admin_payment_status(int $id, string $status): void
     if (!$pay) abort(404);
     if ($status === 'paid') {
         payment_mark_paid($id, input('provider_ref') ?: null);
-    } elseif ($pay['status'] === 'pending' || ($status === 'refunded' && $pay['status'] === 'paid')) {
-        q('UPDATE payments SET status=? WHERE id=?', [$status, $id]);
-        if ($pay['kind'] === 'subscription') {
-            q("UPDATE subscriptions SET status='cancelled' WHERE id=?", [$pay['ref_id']]);
-        }
+    } else {
+        payment_mark_unpaid($id, $status);
     }
     flash('success', t('saved'));
     $back = $_POST['back'] ?? '';

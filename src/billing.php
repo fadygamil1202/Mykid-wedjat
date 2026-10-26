@@ -68,6 +68,31 @@ function payment_mark_paid(int $paymentId, ?string $providerRef = null): bool
     }
 }
 
+/**
+ * Decline ('failed') a pending payment or refund ('refunded') a paid one, and cancel
+ * what it was for: the subscription, the order (unless already shipped) or the
+ * replacement request. The parent is notified.
+ */
+function payment_mark_unpaid(int $paymentId, string $status): bool
+{
+    $pay = q_one('SELECT * FROM payments WHERE id = ?', [$paymentId]);
+    if (!$pay) return false;
+    $allowed = ($status === 'failed' && $pay['status'] === 'pending') || ($status === 'refunded' && $pay['status'] === 'paid');
+    if (!$allowed) return false;
+
+    q('UPDATE payments SET status = ? WHERE id = ?', [$status, $paymentId]);
+    if ($pay['kind'] === 'subscription') {
+        q("UPDATE subscriptions SET status = 'cancelled' WHERE id = ?", [$pay['ref_id']]);
+    } elseif ($pay['kind'] === 'order') {
+        q("UPDATE orders SET status = 'cancelled' WHERE id = ? AND status IN ('pending_payment','paid','processing')", [$pay['ref_id']]);
+    } else {
+        q("UPDATE tag_requests SET status = 'rejected', handled_at = NOW() WHERE id = ? AND status = 'pending'", [$pay['ref_id']]);
+    }
+    notify((int)$pay['user_id'], $status === 'failed' ? 'notify.payment_failed' : 'notify.payment_refunded',
+           ['ref' => 'MKW-' . $paymentId, 'kind' => '@pay.kind.' . $pay['kind']]);
+    return true;
+}
+
 /** Start the subscription now, or right after the current one ends (renewal). */
 function subscription_activate(int $subscriptionId): void
 {

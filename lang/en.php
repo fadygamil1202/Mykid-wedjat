@@ -187,6 +187,9 @@ return [
     'pay.kind.subscription' => 'Subscription', 'pay.kind.order' => 'Order', 'pay.kind.replacement' => 'Replacement',
 
     // Notifications
+    'notify.payment_failed' => 'Payment :ref (:kind) was not confirmed, so it has been cancelled. If you already paid, please contact support.',
+    'notify.payment_refunded' => 'Payment :ref (:kind) has been refunded and cancelled.',
+    'pay.failed_text' => 'This payment was not confirmed and has been cancelled. If you already paid, please contact support.',
     'notify.none' => 'No notifications yet.',
     'notify.scan' => ':name\'s :type was scanned at :time.',
     'notify.scan_locked' => 'Your locked :type (:name) was scanned at :time. Nothing was shown.',

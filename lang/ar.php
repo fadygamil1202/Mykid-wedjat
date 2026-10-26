@@ -187,6 +187,9 @@ return [
     'pay.kind.subscription' => 'اشتراك', 'pay.kind.order' => 'طلب', 'pay.kind.replacement' => 'استبدال',
 
     // Notifications
+    'notify.payment_failed' => 'لم يتم تأكيد الدفع :ref (:kind)، لذلك تم إلغاؤه. لو دفعت بالفعل، تواصل مع الدعم من فضلك.',
+    'notify.payment_refunded' => 'تم استرداد الدفع :ref (:kind) وإلغاؤه.',
+    'pay.failed_text' => 'لم يتم تأكيد هذا الدفع وتم إلغاؤه. لو دفعت بالفعل، تواصل مع الدعم من فضلك.',
     'notify.none' => 'لا توجد إشعارات بعد.',
     'notify.scan' => 'تم مسح :type الخاص بـ :name الساعة :time.',
     'notify.scan_locked' => 'تم مسح :type المقفول (:name) الساعة :time. لم يظهر أي شيء.',
