@@ -13,6 +13,8 @@
       <br><?= e(t('pay.use_ref', ['ref' => 'MKW-' . $payment['id']])) ?>
     </div>
     <p class="hint" style="margin-top:.75rem"><?= e(t('pay.online_soon')) ?></p>
+  <?php elseif ($payment['status'] === 'failed' || $payment['status'] === 'refunded'): ?>
+    <div class="flash flash-error"><?= e(t('pay.failed_text')) ?></div>
   <?php elseif ($payment['status'] === 'paid'): ?>
     <div class="flash flash-success"><?= e(t('pay.thanks')) ?></div>
   <?php endif; ?>

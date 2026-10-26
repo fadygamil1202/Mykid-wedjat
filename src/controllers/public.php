@@ -18,7 +18,8 @@ function emergency_page_data(array $child, int $parentId): array
         'subscribed' => $subscribed,
         'age'        => ($full && $p['show_age']) ? age_from_dob($child['date_of_birth']) : null,
         'allergies'  => ($full && $p['show_allergies']) ? (json_decode($p['allergies'] ?? '[]', true) ?: []) : [],
-        'contacts'   => q_all('SELECT id, name, relation FROM emergency_contacts WHERE child_id=? ORDER BY sort_order, id', [$child['id']]),
+        // Only ids: the finder never sees contact names or numbers, just "Call parent" buttons
+        'contacts'   => q_all('SELECT id FROM emergency_contacts WHERE child_id=? ORDER BY sort_order, id', [$child['id']]),
     ];
 }
 
