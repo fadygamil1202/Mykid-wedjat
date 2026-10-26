@@ -173,6 +173,9 @@ function paymob_apply_transaction(array $txn, ?string $reference): ?int
         }
         q("UPDATE payments SET provider = 'paymob' WHERE id = ?", [$paymentId]);
         payment_mark_paid($paymentId, $txnId);
+    } elseif (!$bool($txn['pending'] ?? false)) {
+        error_log("Paymob: MKW-{$paymentId} declined: " . paymob_str(paymob_get($txn, 'data.message') ?? ($txn['data.message'] ?? ''))
+            . ' (code ' . paymob_str(paymob_get($txn, 'data.txn_response_code') ?? ($txn['txn_response_code'] ?? '')) . ', integration ' . paymob_str($txn['integration_id'] ?? '') . ')');
     }
     // A declined card leaves the payment waiting, so the parent can try again
     return $paymentId;
@@ -259,7 +262,14 @@ function paymob_return(): void
     $paid = q_one("SELECT 1 FROM payments WHERE id = ? AND status = 'paid'", [$paymentId]);
     if (!$paid && $verified) {
         $waiting = ($q['success'] ?? '') === 'true' || ($q['pending'] ?? '') === 'true';
-        flash($waiting ? 'info' : 'error', t($waiting ? 'paymob.confirming' : 'paymob.declined'));
+        $msg = t($waiting ? 'paymob.confirming' : 'paymob.declined');
+        // Paymob's reason ("Do not honour", "Insufficient funds", ...) helps the parent and support
+        $reason = trim((string)($q['data.message'] ?? ''));
+        if (!$waiting && $reason !== '') {
+            $msg .= ' ' . t('paymob.reason', ['reason' => mb_substr($reason, 0, 120)]);
+            if (config('debug', false)) $msg .= ' [code ' . ($q['txn_response_code'] ?? '?') . ', integration ' . ($q['integration_id'] ?? '?') . ']';
+        }
+        flash($waiting ? 'info' : 'error', $msg);
     }
     redirect("payments/{$paymentId}");
 }

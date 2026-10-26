@@ -345,4 +345,5 @@ return [
     'paymob.redirect_title' => 'Taking you to Paymob…',
     'paymob.redirect_text' => 'You will pay securely on Paymob, then come back here automatically.',
     'paymob.redirect_btn' => 'Continue to payment',
+    'paymob.reason' => 'The bank said: :reason.',
 ];
