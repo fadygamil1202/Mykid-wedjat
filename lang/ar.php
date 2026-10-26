@@ -345,4 +345,5 @@ return [
     'paymob.redirect_title' => 'جاري تحويلك إلى Paymob…',
     'paymob.redirect_text' => 'هتدفع بأمان على Paymob وبعدها هترجع هنا تلقائيًا.',
     'paymob.redirect_btn' => 'متابعة للدفع',
+    'paymob.reason' => 'سبب الرفض: :reason.',
 ];
