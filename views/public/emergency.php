@@ -21,11 +21,11 @@
     <div class="em-actions">
       <?php foreach ($contacts as $i => $ct): ?>
         <?php if (!empty($preview)): ?>
-          <button class="em-btn em-btn-primary" type="button" disabled><?= icon('phone') ?> <span><?= e(t('public.call', ['name' => $ct['name']])) ?><?php if ($ct['relation']): ?><small><?= e($ct['relation']) ?></small><?php endif; ?></span></button>
+          <button class="em-btn em-btn-primary" type="button" disabled><?= icon('phone') ?> <span><?= e($i === 0 ? t('public.call_parent') : t('public.call_family', ['n' => $i + 1])) ?></span></button>
         <?php else: ?>
           <form method="post" action="/e/<?= e($token) ?>/call/<?= e($ct['id']) ?>">
             <?= csrf_field() ?>
-            <button class="em-btn em-btn-primary" type="submit"><?= icon('phone') ?> <span><?= e(t('public.call', ['name' => $ct['name']])) ?><?php if ($ct['relation']): ?><small><?= e($ct['relation']) ?></small><?php endif; ?></span></button>
+            <button class="em-btn em-btn-primary" type="submit"><?= icon('phone') ?> <span><?= e($i === 0 ? t('public.call_parent') : t('public.call_family', ['n' => $i + 1])) ?></span></button>
           </form>
         <?php endif; ?>
       <?php endforeach; ?>

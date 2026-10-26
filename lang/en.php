@@ -109,7 +109,7 @@ return [
     // Emergency info
     'emergency.edit_title' => 'Emergency info',
     'emergency.intro' => 'This is what anyone who taps the card will see. Keep it to what a first responder needs.',
-    'emergency.contacts_title' => 'Who should be called?', 'emergency.contacts_hint' => 'Up to 3 people, in order. The finder sees the names only; the numbers are never shown.',
+    'emergency.contacts_title' => 'Who should be called?', 'emergency.contacts_hint' => 'Up to 3 people, in order. The finder only sees "Call parent" buttons: names and numbers are never shown.',
     'emergency.contact_invalid' => 'Contact :n needs a name and a valid phone number.', 'emergency.contact_required' => 'Add at least one emergency contact.',
     'emergency.allergies_ph' => "Peanuts|severe\nPenicillin|moderate",
     'emergency.allergies_hint' => 'One per line: name|severity (mild, moderate or severe).',
@@ -147,7 +147,7 @@ return [
 
     // Public emergency page
     'public.title' => 'Emergency information', 'public.heading' => 'EMERGENCY INFO',
-    'public.call' => 'Call :name', 'public.call_ambulance' => 'Call ambulance (123)', 'public.call_police' => 'Call police (122)',
+    'public.call_parent' => 'Call parent', 'public.call_family' => 'Call family (contact :n)', 'public.call_ambulance' => 'Call ambulance (123)', 'public.call_police' => 'Call police (122)',
     'public.privacy' => 'Shared by the child\'s parent for emergencies only.',
     'public.logged' => 'Opening this page notifies the parent.',
     'public.not_found' => 'This card is not active.', 'public.no_contact' => 'No contact available.',

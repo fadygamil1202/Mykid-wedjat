@@ -109,7 +109,7 @@ return [
     // Emergency info
     'emergency.edit_title' => 'بيانات الطوارئ',
     'emergency.intro' => 'ده اللي هيشوفه أي حد يلمس الكارت. اكتب بس اللي يحتاجه المسعف.',
-    'emergency.contacts_title' => 'مين اللي يتصلوا بيه؟', 'emergency.contacts_hint' => 'حتى ٣ أشخاص بالترتيب. اللي يلاقي الطفل يشوف الأسماء بس، والأرقام مش بتظهر أبدًا.',
+    'emergency.contacts_title' => 'مين اللي يتصلوا بيه؟', 'emergency.contacts_hint' => 'حتى ٣ أشخاص بالترتيب. اللي يلاقي الطفل يشوف زرار "اتصل بولي الأمر" بس: الأسماء والأرقام مش بتظهر أبدًا.',
     'emergency.contact_invalid' => 'جهة الاتصال رقم :n محتاجة اسم ورقم موبايل صحيح.', 'emergency.contact_required' => 'أضف جهة اتصال واحدة على الأقل.',
     'emergency.allergies_ph' => "فول سوداني|شديدة\nبنسلين|متوسطة",
     'emergency.allergies_hint' => 'واحدة في كل سطر: الاسم|الدرجة (خفيفة أو متوسطة أو شديدة).',
@@ -147,7 +147,7 @@ return [
 
     // Public emergency page
     'public.title' => 'معلومات الطوارئ', 'public.heading' => 'معلومات طوارئ',
-    'public.call' => 'اتصل بـ :name', 'public.call_ambulance' => 'اتصل بالإسعاف (١٢٣)', 'public.call_police' => 'اتصل بالشرطة (١٢٢)',
+    'public.call_parent' => 'اتصل بولي الأمر', 'public.call_family' => 'اتصل بالأهل (رقم :n)', 'public.call_ambulance' => 'اتصل بالإسعاف (١٢٣)', 'public.call_police' => 'اتصل بالشرطة (١٢٢)',
     'public.privacy' => 'شاركها ولي أمر الطفل للطوارئ فقط.',
     'public.logged' => 'فتح هذه الصفحة يرسل إشعارًا لولي الأمر.',
     'public.not_found' => 'هذا الكارت غير مفعّل.', 'public.no_contact' => 'لا توجد جهة اتصال.',
