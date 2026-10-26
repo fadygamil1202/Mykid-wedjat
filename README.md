@@ -27,20 +27,20 @@ Without an active subscription (or before the parent ticks the consent box), the
 - **Users**: search parents, see their children, devices, payments and orders, disable an account, give a free subscription, add other admins.
 - **Products and plans**: edit names, descriptions, prices, photos and visibility.
 
-## Payments (Paymob)
+## Online payments (XPay or Paymob)
 
-Parents pay online through **Paymob Unified Checkout** (cards and mobile wallets). The code is in `src/paymob.php`:
+"Pay online" on the payment page uses the gateway chosen in `config.php` (`'online_gateway' => 'xpay'` or `'paymob'`). Both charge the exact amount after promo codes, and both end in `payment_mark_paid()`, which activates the subscription or order. Manual transfer (an admin confirms it) can stay available next to it with `payment.manual`. The shared code is in `src/online.php`.
 
-1. **"Pay online"** on the payment page creates a Paymob *Intention* for the exact amount (after any promo code) and sends the parent to Paymob's checkout.
-2. Paymob calls **`/paymob/callback`** (Transaction Processed callback). The HMAC (SHA-512 over the 20 signed fields) is checked, as are the amount and currency, and then `payment_mark_paid()` activates the subscription or order. Retries are safe. Refund and void callbacks mark the payment refunded.
-3. The parent's browser comes back to **`/paymob/return`**. It is HMAC-checked too and confirms the payment if the callback hasn't arrived yet.
+### XPay (Hosted Checkout), `src/xpay.php`
+1. **Pay online** creates a Checkout Session (`POST /checkout/sessions`) and sends the parent to XPay's hosted page.
+2. XPay's webhook calls **`/xpay/webhook`**. The `XPay-Signature` header is checked (HMAC-SHA256 with replay protection), as are the amount and currency. Then `checkout.session.completed` or `checkout.session.async_payment_succeeded` with `paymentStatus: paid` marks the payment paid. Retries are safe.
+3. The parent returns to **`/xpay/return/{session id}`**. The site reads the session from XPay's API and confirms it there too if the webhook is late.
+4. Fawry payments arrive unpaid first and are confirmed later by `async_payment_succeeded`.
 
-A declined card leaves the payment waiting, so the parent can try again. Manual transfer (InstaPay / Vodafone Cash, confirmed by an admin) can stay available as an alternative: `paymob.manual` in `config.php`.
+**Setup:** in the XPay dashboard, **Developer → API Keys**: copy the `sk_test_…` secret key. **Webhooks**: add the endpoint `https://YOUR-DOMAIN/xpay/webhook` with the `checkout.session.*` events and copy its `whsec_…` signing secret. Put both in the `xpay` block of `config.php` with `'enabled' => true`. Test card: `5123 4500 0000 0008`, expiry `01/39`. For live, use `sk_live_…` and a separate live webhook endpoint and secret.
 
-**Setup (Paymob dashboard → https://eg.dashboard.paymob.com):**
-- Fill in the `paymob` block in `config.php`: secret key, public key, HMAC secret, integration IDs (card and wallet), then `'enabled' => true`.
-- On **every payment integration**, set the *Transaction processed callback* to `https://YOUR-DOMAIN/paymob/callback` and the *Transaction response callback* to `https://YOUR-DOMAIN/paymob/return`. The intention also sends these URLs.
-- Use test keys and test integration IDs first (Paymob's test cards), then switch to the live ones after Paymob approves your account.
+### Paymob (Unified Checkout), `src/paymob.php`
+Creates an Intention and redirects to Unified Checkout. The Transaction Processed callback (`/paymob/callback`) and the return (`/paymob/return`) are HMAC-verified (SHA-512). Fill in the `paymob` block and set `'online_gateway' => 'paymob'` to use it.
 
 ## Install on Hostinger
 

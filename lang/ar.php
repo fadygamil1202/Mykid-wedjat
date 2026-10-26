@@ -335,15 +335,15 @@ return [
     'plans.add_to_cart' => 'أضف للسلة',
     'admin.plan_in_order' => 'يتفعّل عند دفع الطلب',
 
-    // Paymob
-    'paymob.pay_online' => 'ادفع :amount أونلاين',
-    'paymob.methods' => 'كارت أو محفظة موبايل، مؤمّن بواسطة Paymob',
-    'paymob.or_manual' => 'أو ادفع بالتحويل',
-    'paymob.start_failed' => 'الدفع أونلاين غير متاح حاليًا. حاول بعد دقايق أو ادفع بالتحويل.',
-    'paymob.confirming' => 'تم استلام الدفع وجاري تأكيده، الصفحة هتتحدث خلال لحظات.',
-    'paymob.declined' => 'الدفع لم يكتمل. تقدر تحاول تاني بكارت أو محفظة تانية.',
-    'paymob.redirect_title' => 'جاري تحويلك إلى Paymob…',
-    'paymob.redirect_text' => 'هتدفع بأمان على Paymob وبعدها هترجع هنا تلقائيًا.',
-    'paymob.redirect_btn' => 'متابعة للدفع',
-    'paymob.reason' => 'سبب الرفض: :reason.',
+    // Online payment (Paymob / XPay)
+    'online.pay' => 'ادفع :amount أونلاين',
+    'online.methods' => 'كارت ووسائل دفع أخرى، مؤمّن بواسطة :name',
+    'online.or_manual' => 'أو ادفع بالتحويل',
+    'online.start_failed' => 'الدفع أونلاين غير متاح حاليًا. حاول بعد دقايق أو ادفع بالتحويل.',
+    'online.confirming' => 'تم استلام الدفع وجاري تأكيده، الصفحة هتتحدث خلال لحظات.',
+    'online.declined' => 'الدفع لم يكتمل. تقدر تحاول تاني بكارت أو محفظة تانية.',
+    'online.redirect_title' => 'جاري تحويلك إلى :name…',
+    'online.redirect_text' => 'هتدفع بأمان على :name وبعدها هترجع هنا تلقائيًا.',
+    'online.redirect_btn' => 'متابعة للدفع',
+    'online.reason' => 'سبب الرفض: :reason.',
 ];

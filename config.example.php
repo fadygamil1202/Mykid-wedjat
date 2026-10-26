@@ -23,12 +23,27 @@ return [
     'shipping_fee'    => 50,     // flat fee per order
     'replacement_fee' => 0,      // charged when a parent asks for a new device (0 = free)
 
-    // Until a payment gateway is connected, parents see these instructions and an
-    // admin marks the payment as paid from Admin > Payments.
+    // Manual transfer: parents see these instructions and an admin marks the payment
+    // as paid from Admin > Payments. Shown alone when no online gateway is enabled.
     'payment' => [
         'provider' => 'manual',
+        'manual'   => true,   // also show these transfer instructions next to the online payment button
         'instructions_en' => 'Send the amount by InstaPay or Vodafone Cash to 01000000000 and write your payment number in the note. We activate it within 24 hours.',
         'instructions_ar' => 'حوّل المبلغ عن طريق InstaPay أو فودافون كاش على الرقم 01000000000 واكتب رقم الدفع في الملاحظة. سيتم التفعيل خلال ٢٤ ساعة.',
+    ],
+
+    // Which gateway "Pay online" uses: 'xpay' or 'paymob'. Its block below must be filled in and enabled.
+    'online_gateway' => 'xpay',
+
+    // XPay Hosted Checkout. Dashboard > Developer > API Keys (secret key) and Webhooks.
+    // Webhook endpoint URL: https://YOUR-DOMAIN/xpay/webhook  (events: checkout.session.completed,
+    // checkout.session.async_payment_succeeded, checkout.session.async_payment_failed).
+    // Test and live have separate keys AND separate webhook endpoints/secrets.
+    'xpay' => [
+        'enabled'        => false,
+        'secret_key'     => '',            // sk_test_... / sk_live_...
+        'webhook_secret' => '',            // whsec_...  (from the webhook endpoint)
+        'base_url'       => 'https://api.xpay.app',
     ],
 
     // Paymob online payments (Unified Checkout). Dashboard: https://eg.dashboard.paymob.com
@@ -41,7 +56,6 @@ return [
         'hmac_secret'     => '',
         'integration_ids' => [],          // e.g. [1234567, 7654321]  (card, mobile wallet)
         'base_url'        => 'https://accept.paymob.com',
-        'manual'          => true,        // also show the manual transfer instructions as an alternative
     ],
 
     // Support contact shown on the site

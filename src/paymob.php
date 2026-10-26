@@ -184,36 +184,6 @@ function paymob_apply_transaction(array $txn, ?string $reference): ?int
 
 // ---------- Routes ----------
 
-/** POST /payments/{id}/paymob: send the parent to Paymob's checkout. */
-function payment_paymob_start(int $id): void
-{
-    $user = require_parent();
-    $payment = q_one("SELECT * FROM payments WHERE id = ? AND user_id = ? AND status = 'pending'", [$id, $user['id']]);
-    if (!$payment || !paymob_enabled() || (float)$payment['amount'] <= 0) redirect("payments/{$id}");
-    try {
-        $url = paymob_checkout_url($payment);
-    } catch (Throwable $ex) {
-        error_log((string)$ex);
-        flash('error', t('paymob.start_failed') . (config('debug', false) ? ' — ' . $ex->getMessage() : ''));
-        redirect("payments/{$id}");
-    }
-    $_SESSION['paymob_payment'] = $id; // to find the payment again when the browser comes back
-    $_SESSION['paymob_url'] = $url;
-    // Go through our own page instead of redirecting the form to Paymob: browsers block a
-    // form submission that ends on another site (CSP form-action), which looked like "nothing happens".
-    redirect("payments/{$id}/paymob");
-}
-
-/** GET /payments/{id}/paymob: "Taking you to Paymob…" page that opens the checkout as a normal link. */
-function payment_paymob_go(int $id): void
-{
-    require_parent();
-    $url = (string)($_SESSION['paymob_url'] ?? '');
-    unset($_SESSION['paymob_url']);
-    if (!str_starts_with($url, paymob_base() . '/')) redirect("payments/{$id}");
-    view('billing/paymob_redirect', ['title' => t('pay.title'), 'url' => $url, 'paymentId' => $id], 'layout_plain');
-}
-
 /** POST /paymob/callback: Transaction Processed callback from Paymob (no CSRF, no session). */
 function paymob_callback(): void
 {
@@ -255,19 +225,19 @@ function paymob_return(): void
     if ($verified) {
         $paymentId = paymob_apply_transaction($q, $q['merchant_order_id'] ?? null);
     }
-    $paymentId ??= (int)($_SESSION['paymob_payment'] ?? 0) ?: null;
-    unset($_SESSION['paymob_payment']);
+    $paymentId ??= (int)($_SESSION['online_payment'] ?? 0) ?: null;
+    unset($_SESSION['online_payment']);
     if (!$paymentId) redirect(current_user() ? 'dashboard' : 'login');
 
     // The payment page itself shows "paid"; only explain the other outcomes, and only from a signed redirect
     $paid = q_one("SELECT 1 FROM payments WHERE id = ? AND status = 'paid'", [$paymentId]);
     if (!$paid && $verified) {
         $waiting = ($q['success'] ?? '') === 'true' || ($q['pending'] ?? '') === 'true';
-        $msg = t($waiting ? 'paymob.confirming' : 'paymob.declined');
+        $msg = t($waiting ? 'online.confirming' : 'online.declined');
         // Paymob's reason ("Do not honour", "Insufficient funds", ...) helps the parent and support
         $reason = trim((string)($q['data.message'] ?? ''));
         if (!$waiting && $reason !== '') {
-            $msg .= ' ' . t('paymob.reason', ['reason' => mb_substr($reason, 0, 120)]);
+            $msg .= ' ' . t('online.reason', ['reason' => mb_substr($reason, 0, 120)]);
             if (config('debug', false)) $msg .= ' [code ' . ($q['txn_response_code'] ?? '?') . ', integration ' . ($q['integration_id'] ?? '?') . ']';
         }
         flash($waiting ? 'info' : 'error', $msg);

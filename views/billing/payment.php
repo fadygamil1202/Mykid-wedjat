@@ -24,18 +24,18 @@
     </form>
   <?php endif; ?>
   <?php if ($payment['status'] === 'pending'):
-    $online = paymob_enabled();
-    $manual = !$online || config('paymob.manual', true); ?>
+    $online = online_gateway();
+    $manual = manual_payment_enabled(); ?>
     <?php if ($online): ?>
-      <form method="post" action="/payments/<?= e($payment['id']) ?>/paymob" class="pay-online">
+      <form method="post" action="/payments/<?= e($payment['id']) ?>/pay" class="pay-online">
         <?= csrf_field() ?>
-        <button class="btn btn-primary btn-block" type="submit"><?= icon('card') ?> <?= e(t('paymob.pay_online', ['amount' => money($payment['amount'])])) ?></button>
-        <p class="hint center"><?= icon('lock') ?> <?= e(t('paymob.methods')) ?></p>
+        <button class="btn btn-primary btn-block" type="submit"><?= icon('card') ?> <?= e(t('online.pay', ['amount' => money($payment['amount'])])) ?></button>
+        <p class="hint center"><?= icon('lock') ?> <?= e(t('online.methods', ['name' => online_gateway_name()])) ?></p>
       </form>
     <?php endif; ?>
     <?php if ($manual): ?>
       <div class="hint warn" style="font-size:1rem">
-        <strong><?= e($online ? t('paymob.or_manual') : t('pay.how')) ?></strong><br>
+        <strong><?= e($online ? t('online.or_manual') : t('pay.how')) ?></strong><br>
         <?= e(config('payment.instructions_' . current_lang(), config('payment.instructions_en', ''))) ?>
         <br><?= e(t('pay.use_ref', ['ref' => 'MKW-' . $payment['id']])) ?>
       </div>

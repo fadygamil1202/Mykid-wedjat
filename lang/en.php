@@ -335,15 +335,15 @@ return [
     'plans.add_to_cart' => 'Add to cart',
     'admin.plan_in_order' => 'activates when this order is paid',
 
-    // Paymob
-    'paymob.pay_online' => 'Pay :amount online',
-    'paymob.methods' => 'Card or mobile wallet, secured by Paymob',
-    'paymob.or_manual' => 'Or pay by transfer',
-    'paymob.start_failed' => 'Online payment is not available right now. Please try again in a few minutes or pay by transfer.',
-    'paymob.confirming' => 'Payment received. We are confirming it, this page will update in a moment.',
-    'paymob.declined' => 'The payment did not go through. You can try again with another card or wallet.',
-    'paymob.redirect_title' => 'Taking you to Paymob…',
-    'paymob.redirect_text' => 'You will pay securely on Paymob, then come back here automatically.',
-    'paymob.redirect_btn' => 'Continue to payment',
-    'paymob.reason' => 'The bank said: :reason.',
+    // Online payment (Paymob / XPay)
+    'online.pay' => 'Pay :amount online',
+    'online.methods' => 'Card and other payment methods, secured by :name',
+    'online.or_manual' => 'Or pay by transfer',
+    'online.start_failed' => 'Online payment is not available right now. Please try again in a few minutes or pay by transfer.',
+    'online.confirming' => 'Payment received. We are confirming it, this page will update in a moment.',
+    'online.declined' => 'The payment did not go through. You can try again with another card or wallet.',
+    'online.redirect_title' => 'Taking you to :name…',
+    'online.redirect_text' => 'You will pay securely on :name, then come back here automatically.',
+    'online.redirect_btn' => 'Continue to payment',
+    'online.reason' => 'The bank said: :reason.',
 ];
