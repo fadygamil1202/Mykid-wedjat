@@ -21,10 +21,23 @@ function online_gateway_name(): string
     return ONLINE_GATEWAYS[online_gateway() ?? ''] ?? '';
 }
 
-/** Show the manual transfer instructions too (always, when there is no online gateway). */
-function manual_payment_enabled(): bool
+/** Smallest amount the active gateway accepts (XPay: 50 EGP for every method). */
+function online_min_amount(): float
 {
-    return !online_gateway() || (bool)config('payment.manual', config('paymob.manual', true));
+    $g = online_gateway();
+    return $g ? (float)config("{$g}.min_amount", $g === 'xpay' ? 50 : 0) : 0;
+}
+
+/** Can this payment be paid online? (gateway on, and amount at or above its minimum) */
+function online_available(array $payment): bool
+{
+    return online_gateway() !== null && (float)$payment['amount'] > 0 && (float)$payment['amount'] >= online_min_amount();
+}
+
+/** Show the manual transfer instructions: always when this payment can't be paid online. */
+function manual_payment_enabled(array $payment): bool
+{
+    return !online_available($payment) || (bool)config('payment.manual', config('paymob.manual', true));
 }
 
 /** POST /payments/{id}/pay: create the gateway's checkout and send the parent there. */
@@ -33,7 +46,7 @@ function payment_online_start(int $id): void
     $user = require_parent();
     $payment = q_one("SELECT * FROM payments WHERE id = ? AND user_id = ? AND status = 'pending'", [$id, $user['id']]);
     $gateway = online_gateway();
-    if (!$payment || !$gateway || (float)$payment['amount'] <= 0) redirect("payments/{$id}");
+    if (!$payment || !online_available($payment)) redirect("payments/{$id}");
     try {
         $url = ($gateway . '_checkout_url')($payment);
     } catch (Throwable $ex) {

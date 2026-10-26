@@ -346,4 +346,5 @@ return [
     'online.redirect_text' => 'You will pay securely on :name, then come back here automatically.',
     'online.redirect_btn' => 'Continue to payment',
     'online.reason' => 'The bank said: :reason.',
+    'online.below_min' => 'Online payment with :name starts from :min. Please pay this amount by transfer below, or choose the yearly plan / add it to a shop order to pay online.',
 ];

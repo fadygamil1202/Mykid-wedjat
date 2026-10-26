@@ -24,8 +24,11 @@
     </form>
   <?php endif; ?>
   <?php if ($payment['status'] === 'pending'):
-    $online = online_gateway();
-    $manual = manual_payment_enabled(); ?>
+    $online = online_available($payment);
+    $manual = manual_payment_enabled($payment); ?>
+    <?php if (!$online && online_gateway()): ?>
+      <div class="flash flash-info"><?= e(t('online.below_min', ['min' => money(online_min_amount()), 'name' => online_gateway_name()])) ?></div>
+    <?php endif; ?>
     <?php if ($online): ?>
       <form method="post" action="/payments/<?= e($payment['id']) ?>/pay" class="pay-online">
         <?= csrf_field() ?>

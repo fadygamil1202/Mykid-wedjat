@@ -43,6 +43,7 @@ return [
         'enabled'        => false,
         'secret_key'     => '',            // sk_test_... / sk_live_...
         'webhook_secret' => '',            // whsec_...  (from the webhook endpoint)
+        'min_amount'     => 50,            // XPay rejects payments under 50 EGP (all methods)
         'base_url'       => 'https://api.xpay.app',
     ],
 
