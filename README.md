@@ -104,3 +104,13 @@ database/          schema.sql (tables + starting products and plans)
 Admins manage them at **Admin → Promo codes** (in the ☰ menu): percentage or fixed amount, for everything / subscriptions / shop orders, optional minimum amount, total and per-parent use limits, start and end dates, pause and resume. Parents type a code at checkout or on the payment page. A 100% code marks the payment as paid straight away. A use counts while the payment is waiting or paid; declining the payment frees it again. Used codes can't be deleted (they are paused instead), so payment history stays readable.
 
 **Existing database:** run `database/migrations/001_promo_codes.sql` once in phpMyAdmin before uploading the new files.
+
+## Subscription in the cart
+
+Parents can add a plan to the cart (from the plans page, or from the "Add a subscription" box in the cart and at checkout). One plan at most.
+
+- **Products and plan together:** one order and one payment. When the payment is confirmed the order is paid and the subscription starts. Declining or refunding cancels both.
+- **Plan on its own:** "Pay now" in the cart goes straight to the payment, with no delivery address.
+- **Promo codes:** a combined payment counts as a shop order, so codes for "Everything" or "Shop orders" work on it; codes for "Subscriptions" only work when the plan is paid on its own.
+
+**Existing database:** run `database/migrations/002_subscription_in_orders.sql` once in phpMyAdmin (after `001_promo_codes.sql`) before uploading the new files.

@@ -21,7 +21,16 @@
           <?php endif; ?>
         </div>
       <?php endforeach; ?>
-      <?php $subtotal = $order['subtotal']; $shipping = $order['shipping_fee']; $discount = $order['discount']; require BASE_PATH . '/views/shop/_totals.php'; ?>
+      <?php if ($order['plan_id']):
+        $osub = $order['subscription_id'] ? q_one('SELECT * FROM subscriptions WHERE id=?', [$order['subscription_id']]) : null; ?>
+        <div class="device">
+          <span class="device-icon"><?= icon('shield') ?></span>
+          <div class="device-main"><strong><?= e(t('cart.plan_line', ['plan' => loc($order, 'plan_name')])) ?></strong>
+            <span class="muted small"><?= e(money($order['plan_price'])) ?> · <?= e(t('admin.plan_in_order')) ?></span></div>
+          <?php if ($osub): $st = sub_state($osub); ?><span class="badge badge-<?= e($st) ?>"><?= e(t('sub.state.' . $st)) ?></span><?php endif; ?>
+        </div>
+      <?php endif; ?>
+      <?php $subtotal = $order['subtotal']; $shipping = $order['shipping_fee']; $discount = $order['discount']; $planPrice = $order['plan_price']; require BASE_PATH . '/views/shop/_totals.php'; ?>
       <?php if ($payment): ?>
         <p class="small"><?= e(t('pay.title')) ?>: <strong dir="ltr">MKW-<?= e($payment['id']) ?></strong> <span class="badge badge-<?= e($payment['status']) ?>"><?= e(t('pay.status.' . $payment['status'])) ?></span>
         <?php if ($payment['status'] === 'pending'): ?><a href="/admin/payments?status=pending"><?= e(t('admin.mark_paid')) ?></a><?php endif; ?></p>

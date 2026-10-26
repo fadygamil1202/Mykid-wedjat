@@ -24,6 +24,9 @@ foreach ($plans as $pl) if ((int)$pl['interval_months'] === 1) $monthly = (float
         <input type="hidden" name="plan_id" value="<?= e($pl['id']) ?>">
         <button class="btn <?= $months > 1 ? 'btn-gold' : 'btn-primary' ?> btn-block" type="submit"><?= e(!empty($sub) ? t('plans.renew') : t('plans.choose')) ?></button>
       </form>
+      <form method="post" action="/cart/plan"><?= csrf_field() ?>
+        <button class="btn btn-ghost btn-block btn-sm" type="submit" name="plan_id" value="<?= e($pl['id']) ?>"><?= icon('cart') ?> <?= e(t('plans.add_to_cart')) ?></button>
+      </form>
     <?php else: ?>
       <a class="btn <?= $months > 1 ? 'btn-gold' : 'btn-primary' ?> btn-block" href="/register"><?= e(t('plans.start')) ?></a>
     <?php endif; ?>

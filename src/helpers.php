@@ -278,7 +278,16 @@ function cart(): array
 
 function cart_count(): int
 {
-    return array_sum(array_column(cart(), 'qty'));
+    return array_sum(array_column(cart(), 'qty')) + (isset($_SESSION['cart_plan']) ? 1 : 0);
+}
+
+/** Subscription plan waiting in the cart (one at most), or null. */
+function cart_plan(): ?array
+{
+    $id = $_SESSION['cart_plan'] ?? null;
+    $plan = $id ? q_one('SELECT * FROM plans WHERE id=? AND is_active=1', [$id]) : null;
+    if (!$plan) unset($_SESSION['cart_plan']);
+    return $plan;
 }
 
 /** Cart lines joined with product and child rows; drops anything no longer valid. */

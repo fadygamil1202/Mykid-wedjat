@@ -319,4 +319,19 @@ return [
     'admin.promo_not_used' => 'لم يُستخدم بعد.',
     'admin.promo_edit_note' => 'التعديلات تطبق على الاستخدامات الجديدة. المدفوعات اللي استخدمت الكود تحتفظ بخصمها.',
     'delete' => 'حذف',
+
+    // Subscription in the cart
+    'cart.subscription' => 'الاشتراك',
+    'cart.plan_added' => 'تمت إضافة الاشتراك للسلة.',
+    'cart.plan_line' => 'اشتراك :plan',
+    'cart.plan_covers' => 'يغطي كل أطفالك',
+    'cart.upsell_title' => 'أضف اشتراك لنفس الدفعة',
+    'cart.upsell_text' => 'ادفع الأجهزة والاشتراك مع بعض في دفعة واحدة.',
+    'cart.upsell_renew' => 'تحب تمدد اشتراكك كمان؟',
+    'cart.upsell_renew_text' => 'باقتك سارية حتى :date. الإضافة دلوقتي بتمددها من التاريخ ده.',
+    'cart.one_payment' => 'الأجهزة والاشتراك بيتدفعوا مع بعض في دفعة واحدة.',
+    'cart.pay_now' => 'ادفع الآن',
+    'cart.plan_starts' => 'الاشتراك بيبدأ أول ما يتأكد الدفع.',
+    'plans.add_to_cart' => 'أضف للسلة',
+    'admin.plan_in_order' => 'يتفعّل عند دفع الطلب',
 ];

@@ -98,8 +98,11 @@ CREATE TABLE subscriptions (
 CREATE TABLE orders (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id INT UNSIGNED NOT NULL,
+  plan_id INT UNSIGNED NULL,          -- subscription bought together with the products
+  subscription_id INT UNSIGNED NULL,
   status ENUM('pending_payment','paid','processing','shipped','delivered','cancelled') NOT NULL DEFAULT 'pending_payment',
-  subtotal DECIMAL(10,2) NOT NULL,
+  subtotal DECIMAL(10,2) NOT NULL,    -- products only
+  plan_price DECIMAL(10,2) NOT NULL DEFAULT 0,
   shipping_fee DECIMAL(10,2) NOT NULL DEFAULT 0,
   discount DECIMAL(10,2) NOT NULL DEFAULT 0,
   total DECIMAL(10,2) NOT NULL,
@@ -111,7 +114,9 @@ CREATE TABLE orders (
   notes VARCHAR(500) NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (plan_id) REFERENCES plans(id),
+  FOREIGN KEY (subscription_id) REFERENCES subscriptions(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Each item is linked to the child whose emergency page the device opens.

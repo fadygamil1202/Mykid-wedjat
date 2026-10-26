@@ -105,7 +105,7 @@ function payment_set_discount(array $pay, float $base, float $discount, ?int $pr
     q('UPDATE payments SET original_amount = ?, discount = ?, amount = ?, promo_code_id = ?, promo_code = ? WHERE id = ?',
       [$base, $discount, $base - $discount, $promoId, $code, $pay['id']]);
     if ($pay['kind'] === 'order') {
-        q('UPDATE orders SET discount = ?, total = subtotal + shipping_fee - ? WHERE id = ?', [$discount, $discount, $pay['ref_id']]);
+        q('UPDATE orders SET discount = ?, total = subtotal + plan_price + shipping_fee - ? WHERE id = ?', [$discount, $discount, $pay['ref_id']]);
     }
 }
 
@@ -129,6 +129,12 @@ function payment_mark_paid(int $paymentId, ?string $providerRef = null): bool
         } elseif ($pay['kind'] === 'order') {
             q("UPDATE orders SET status = 'paid' WHERE id = ? AND status = 'pending_payment'", [$pay['ref_id']]);
             notify((int)$pay['user_id'], 'notify.order_paid', ['id' => $pay['ref_id']]);
+            // A subscription bought in the same order starts now
+            $subId = q_one('SELECT subscription_id FROM orders WHERE id = ?', [$pay['ref_id']])['subscription_id'] ?? null;
+            if ($subId) {
+                subscription_activate((int)$subId);
+                notify((int)$pay['user_id'], 'notify.sub_active');
+            }
         }
         $pdo->commit();
         return true;
@@ -155,6 +161,7 @@ function payment_mark_unpaid(int $paymentId, string $status): bool
         q("UPDATE subscriptions SET status = 'cancelled' WHERE id = ?", [$pay['ref_id']]);
     } elseif ($pay['kind'] === 'order') {
         q("UPDATE orders SET status = 'cancelled' WHERE id = ? AND status IN ('pending_payment','paid','processing')", [$pay['ref_id']]);
+        q("UPDATE subscriptions s JOIN orders o ON o.subscription_id = s.id SET s.status = 'cancelled' WHERE o.id = ?", [$pay['ref_id']]);
     } else {
         q("UPDATE tag_requests SET status = 'rejected', handled_at = NOW() WHERE id = ? AND status = 'pending'", [$pay['ref_id']]);
     }

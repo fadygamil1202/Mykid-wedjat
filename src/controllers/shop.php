@@ -27,11 +27,33 @@ function cart_show(): void
 {
     $user = require_parent();
     $lines = cart_lines($user);
-    $subtotal = array_sum(array_column($lines, 'total'));
+    $plan = cart_plan();
     view('shop/cart', [
-        'title' => t('cart.title'), 'lines' => $lines, 'subtotal' => $subtotal,
+        'title' => t('cart.title'), 'lines' => $lines, 'plan' => $plan, 'plans' => plans(),
+        'subtotal' => array_sum(array_column($lines, 'total')), 'planPrice' => $plan ? (float)$plan['price'] : 0,
         'shipping' => $lines ? (float)config('shipping_fee', 0) : 0,
+        'sub' => active_subscription((int)$user['id']),
     ]);
+}
+
+/** Put a subscription plan in the cart (replaces any plan already there). */
+function cart_plan_add(): void
+{
+    require_parent();
+    $planId = input_int('plan_id');
+    if (!$planId || !q_one('SELECT 1 FROM plans WHERE id=? AND is_active=1', [$planId])) abort(400);
+    $_SESSION['cart_plan'] = $planId;
+    flash('success', t('cart.plan_added'));
+    $back = input('back');
+    redirect(in_array($back, ['checkout', 'cart'], true) ? $back : 'cart');
+}
+
+function cart_plan_remove(): void
+{
+    require_parent();
+    unset($_SESSION['cart_plan']);
+    $back = input('back');
+    redirect(in_array($back, ['checkout', 'cart'], true) ? $back : 'cart');
 }
 
 function cart_add(): void
@@ -66,12 +88,15 @@ function checkout_form(): void
 {
     $user = require_parent();
     $lines = cart_lines($user);
-    if (!$lines) redirect('cart');
-    $subtotal = array_sum(array_column($lines, 'total'));
+    if (!$lines) redirect('cart'); // a subscription on its own is paid from the cart, no address needed
+    $plan = cart_plan();
     $last = q_one('SELECT * FROM orders WHERE user_id=? ORDER BY id DESC LIMIT 1', [$user['id']]);
     view('shop/checkout', [
-        'title' => t('checkout.title'), 'user' => $user, 'lines' => $lines, 'subtotal' => $subtotal,
+        'title' => t('checkout.title'), 'user' => $user, 'lines' => $lines,
+        'subtotal' => array_sum(array_column($lines, 'total')), 'plan' => $plan, 'plans' => plans(),
+        'planPrice' => $plan ? (float)$plan['price'] : 0,
         'shipping' => (float)config('shipping_fee', 0), 'last' => $last,
+        'sub' => active_subscription((int)$user['id']),
     ]);
 }
 
@@ -92,12 +117,20 @@ function checkout_submit(): void
     }
     $subtotal = array_sum(array_column($lines, 'total'));
     $shipping = (float)config('shipping_fee', 0);
+    $plan = cart_plan();
+    $planPrice = $plan ? (float)$plan['price'] : 0;
 
     $pdo = db();
     $pdo->beginTransaction();
-    q('INSERT INTO orders (user_id, subtotal, shipping_fee, total, ship_name, ship_phone, ship_governorate, ship_city, ship_address, notes)
-       VALUES (?,?,?,?,?,?,?,?,?,?)', [
-        $user['id'], $subtotal, $shipping, $subtotal + $shipping,
+    // The subscription waits as 'pending' and starts when the order's payment is confirmed
+    $subId = null;
+    if ($plan) {
+        q('INSERT INTO subscriptions (user_id, plan_id) VALUES (?, ?)', [$user['id'], $plan['id']]);
+        $subId = (int)$pdo->lastInsertId();
+    }
+    q('INSERT INTO orders (user_id, plan_id, subscription_id, subtotal, plan_price, shipping_fee, total, ship_name, ship_phone, ship_governorate, ship_city, ship_address, notes)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)', [
+        $user['id'], $plan['id'] ?? null, $subId, $subtotal, $planPrice, $shipping, $subtotal + $planPrice + $shipping,
         mb_substr($ship['name'], 0, 150), $ship['phone'], $ship['governorate'],
         mb_substr($ship['city'], 0, 100), mb_substr($ship['address'], 0, 500), mb_substr(input('notes'), 0, 500) ?: null,
     ]);
@@ -106,10 +139,10 @@ function checkout_submit(): void
         q('INSERT INTO order_items (order_id, product_id, child_id, qty, unit_price) VALUES (?,?,?,?,?)',
           [$orderId, $line['product']['id'], $line['child']['id'], $line['qty'], $line['product']['price']]);
     }
-    $paymentId = payment_create((int)$user['id'], 'order', $orderId, $subtotal + $shipping);
+    $paymentId = payment_create((int)$user['id'], 'order', $orderId, $subtotal + $planPrice + $shipping);
     $pdo->commit();
 
-    unset($_SESSION['cart']);
+    unset($_SESSION['cart'], $_SESSION['cart_plan']);
     notify_admins('notify.admin_order', ['id' => $orderId, 'name' => $user['name']]);
     flash('success', t('checkout.placed', ['id' => $orderId]));
     // A refused code doesn't stop the order: the parent can fix it on the payment page
@@ -134,6 +167,8 @@ function order_show(int $id): void
 {
     $user = require_parent();
     $order = own_order($user, $id);
+    $order += q_one('SELECT name_en plan_name_en, name_ar plan_name_ar FROM plans WHERE id=?', [$order['plan_id'] ?? 0])
+        ?? ['plan_name_en' => null, 'plan_name_ar' => null];
     view('orders/show', [
         'title'   => t('orders.number', ['id' => $id]),
         'order'   => $order,
@@ -178,6 +213,7 @@ function subscription_start(): void
 
     q('INSERT INTO subscriptions (user_id, plan_id) VALUES (?, ?)', [$user['id'], $plan['id']]);
     $paymentId = payment_create((int)$user['id'], 'subscription', (int)db()->lastInsertId(), (float)$plan['price']);
+    unset($_SESSION['cart_plan']);
     redirect("payments/{$paymentId}");
 }
 

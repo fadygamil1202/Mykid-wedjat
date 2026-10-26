@@ -62,6 +62,8 @@ $routes = [
     ['POST', '#^/payments/(\d+)/promo/remove$#',      'payment_promo_remove'],
     ['GET',  '#^/cart$#',                             'cart_show'],
     ['POST', '#^/cart$#',                             'cart_add'],
+    ['POST', '#^/cart/plan$#',                        'cart_plan_add'],
+    ['POST', '#^/cart/plan/remove$#',                 'cart_plan_remove'],
     ['POST', '#^/cart/([a-f0-9]{8})/remove$#',        'cart_remove'],
     ['GET',  '#^/checkout$#',                         'checkout_form'],
     ['POST', '#^/checkout$#',                         'checkout_submit'],

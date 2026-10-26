@@ -193,7 +193,8 @@ function admin_orders(): void
 function admin_order_show(int $id): void
 {
     require_admin();
-    $order = q_one('SELECT o.*, u.name, u.email, u.phone FROM orders o JOIN users u ON u.id=o.user_id WHERE o.id=?', [$id]);
+    $order = q_one('SELECT o.*, u.name, u.email, u.phone, pl.name_en plan_name_en, pl.name_ar plan_name_ar
+                    FROM orders o JOIN users u ON u.id=o.user_id LEFT JOIN plans pl ON pl.id=o.plan_id WHERE o.id=?', [$id]);
     if (!$order) abort(404);
     $items = q_all('SELECT i.*, p.name_en, p.name_ar, p.type, c.first_name, c.last_name,
                     (SELECT COUNT(*) FROM tags t WHERE t.order_item_id=i.id) issued
@@ -215,6 +216,9 @@ function admin_order_status(int $id): void
     $status = input('status');
     if (!$order || !in_array($status, ORDER_STATUSES, true)) abort(400);
     q('UPDATE orders SET status=? WHERE id=?', [$status, $id]);
+    if ($status === 'cancelled' && $order['subscription_id']) {
+        q("UPDATE subscriptions SET status='cancelled' WHERE id=? AND status='pending'", [$order['subscription_id']]);
+    }
     if ($status !== $order['status']) {
         notify((int)$order['user_id'], 'notify.order_status', ['id' => $id, 'status' => '@order.' . $status]);
     }
