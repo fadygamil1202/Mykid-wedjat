@@ -18,8 +18,13 @@
               <span><strong><?= e(loc($it, 'name')) ?></strong> × <?= e($it['qty']) ?><br><span class="muted small"><?= e(t('cart.for', ['name' => $it['first_name'] ?? '—'])) ?></span></span></span>
             <strong><?= e(money($it['unit_price'] * $it['qty'])) ?></strong></li>
       <?php endforeach; ?>
+      <?php if ($order['plan_id']): ?>
+        <li><span class="row" style="flex-wrap:nowrap"><span class="device-icon"><?= icon('shield') ?></span>
+            <strong><?= e(t('cart.plan_line', ['plan' => loc($order, 'plan_name')])) ?></strong></span>
+          <strong><?= e(money($order['plan_price'])) ?></strong></li>
+      <?php endif; ?>
     </ul>
-    <?php $subtotal = $order['subtotal']; $shipping = $order['shipping_fee']; $discount = $order['discount']; require BASE_PATH . '/views/shop/_totals.php'; ?>
+    <?php $subtotal = $order['subtotal']; $shipping = $order['shipping_fee']; $discount = $order['discount']; $planPrice = $order['plan_price']; require BASE_PATH . '/views/shop/_totals.php'; ?>
   </section>
   <section class="card col-side">
     <h2><?= e(t('checkout.shipping')) ?></h2>

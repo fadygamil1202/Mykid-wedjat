@@ -319,4 +319,19 @@ return [
     'admin.promo_not_used' => 'Not used yet.',
     'admin.promo_edit_note' => 'Changes apply to new uses. Payments that already used the code keep their discount.',
     'delete' => 'Delete',
+
+    // Subscription in the cart
+    'cart.subscription' => 'Subscription',
+    'cart.plan_added' => 'Subscription added to your cart.',
+    'cart.plan_line' => ':plan subscription',
+    'cart.plan_covers' => 'Covers all your children',
+    'cart.upsell_title' => 'Add a subscription to the same payment',
+    'cart.upsell_text' => 'Pay for the devices and the subscription together, in one payment.',
+    'cart.upsell_renew' => 'Extend your subscription too?',
+    'cart.upsell_renew_text' => 'Your plan runs until :date. Adding one now extends it from that date.',
+    'cart.one_payment' => 'Devices and subscription are paid together in one payment.',
+    'cart.pay_now' => 'Pay now',
+    'cart.plan_starts' => 'The subscription starts as soon as the payment is confirmed.',
+    'plans.add_to_cart' => 'Add to cart',
+    'admin.plan_in_order' => 'activates when this order is paid',
 ];

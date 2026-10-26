@@ -1,8 +1,11 @@
 <h1><?= e(t('cart.title')) ?></h1>
-<?php if (!$lines): ?>
+<?php if (!$lines && !$plan): ?>
   <section class="card center">
     <p class="muted"><?= e(t('cart.empty')) ?></p>
-    <a class="btn btn-primary" href="/shop"><?= e(t('nav.shop')) ?></a>
+    <div class="row" style="justify-content:center">
+      <a class="btn btn-primary" href="/shop"><?= e(t('nav.shop')) ?></a>
+      <a class="btn" href="/subscription"><?= e(t('nav.subscription')) ?></a>
+    </div>
   </section>
 <?php else: ?>
 <div class="cols">
@@ -22,12 +25,21 @@
           </span>
         </li>
       <?php endforeach; ?>
+      <?php if ($plan) require BASE_PATH . '/views/shop/_plan_line.php'; ?>
     </ul>
     <a href="/shop">+ <?= e(t('cart.continue')) ?></a>
+    <?php if (!$plan && $plans): ?><?php $inForm = false; require BASE_PATH . '/views/shop/_plan_upsell.php'; ?><?php endif; ?>
   </section>
   <section class="card col-side">
     <?php require BASE_PATH . '/views/shop/_totals.php'; ?>
-    <a class="btn btn-primary btn-block" href="/checkout"><?= e(t('cart.checkout')) ?></a>
+    <?php if ($lines): ?>
+      <a class="btn btn-primary btn-block" href="/checkout"><?= e(t('cart.checkout')) ?></a>
+      <?php if ($plan): ?><p class="hint center" style="margin-top:.5rem"><?= e(t('cart.one_payment')) ?></p><?php endif; ?>
+    <?php else: ?>
+      <!-- Subscription only: nothing to deliver, so go straight to payment -->
+      <form method="post" action="/subscription"><?= csrf_field() ?>
+        <button class="btn btn-primary btn-block" type="submit" name="plan_id" value="<?= e($plan['id']) ?>"><?= e(t('cart.pay_now')) ?></button></form>
+    <?php endif; ?>
   </section>
 </div>
 <?php endif; ?>

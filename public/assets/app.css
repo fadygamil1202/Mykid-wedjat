@@ -274,6 +274,13 @@ td .row { flex-wrap: nowrap; }
 .promo-applied form { margin: 0; }
 .code { font-family: ui-monospace, Menlo, monospace; font-weight: 700; letter-spacing: .03em; }
 
+/* Subscription in the cart */
+.upsell { background: var(--gold-soft); color: #6B4706; border-radius: var(--radius-sm); padding: .9rem 1rem; margin-top: 1rem; }
+.upsell strong { display: flex; gap: .4rem; align-items: center; color: var(--lapis-dark); }
+.upsell p { margin: .25rem 0 .6rem; }
+.upsell form { margin: 0; }
+.plan form + form { margin-top: .4rem; }
+
 /* Timeline */
 .timeline { display: flex; gap: .25rem; margin: .5rem 0 1rem; }
 .timeline span { flex: 1; height: 8px; border-radius: 999px; background: var(--line); }
