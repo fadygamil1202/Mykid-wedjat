@@ -134,7 +134,8 @@ function paymob_checkout_url(array $payment): string
         ]],
         'billing_data'      => $billing,
         'customer'          => ['first_name' => $billing['first_name'], 'last_name' => $billing['last_name'], 'email' => $billing['email']],
-        'special_reference' => 'MKW-' . $payment['id'] . '-' . time(),
+        // Unique per checkout link: Paymob allows one attempt per reference, so two taps must never share one
+        'special_reference' => 'MKW-' . $payment['id'] . '-' . time() . bin2hex(random_bytes(3)),
         'notification_url'  => site_base() . '/paymob/callback',
         'redirection_url'   => site_base() . '/paymob/return',
         'extras'            => ['payment_id' => (int)$payment['id']],
