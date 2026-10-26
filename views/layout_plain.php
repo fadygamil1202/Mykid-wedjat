@@ -10,6 +10,6 @@
     <div class="flash flash-<?= e($f['type']) ?>" role="status"><?= e($f['message']) ?></div>
   <?php endforeach; ?>
   <?= $content ?>
-<script src="/assets/app.js?v=1"></script>
+<script src="/assets/app.js?v=3"></script>
 </body>
 </html>

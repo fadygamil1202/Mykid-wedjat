@@ -21,6 +21,11 @@ document.querySelectorAll('form').forEach(function (form) {
   });
 });
 
+// Payment hand-off page: open Paymob's checkout automatically (the button is there as a fallback)
+document.querySelectorAll('[data-redirect]').forEach(function (el) {
+  window.location.assign(el.getAttribute('data-redirect'));
+});
+
 // Real QR codes: admin production pages only (parents never receive the link)
 document.querySelectorAll('[data-qr]').forEach(function (el) {
   if (!window.qrcode) return;
