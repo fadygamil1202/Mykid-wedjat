@@ -101,6 +101,7 @@ CREATE TABLE orders (
   status ENUM('pending_payment','paid','processing','shipped','delivered','cancelled') NOT NULL DEFAULT 'pending_payment',
   subtotal DECIMAL(10,2) NOT NULL,
   shipping_fee DECIMAL(10,2) NOT NULL DEFAULT 0,
+  discount DECIMAL(10,2) NOT NULL DEFAULT 0,
   total DECIMAL(10,2) NOT NULL,
   ship_name VARCHAR(150) NOT NULL,
   ship_phone VARCHAR(40) NOT NULL,
@@ -161,6 +162,23 @@ CREATE TABLE tag_requests (
   FOREIGN KEY (handled_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Discount codes created by admins (see Admin > Promo codes).
+CREATE TABLE promo_codes (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  code VARCHAR(40) NOT NULL UNIQUE,                 -- stored uppercase, e.g. WELCOME20
+  description VARCHAR(190) NULL,                    -- admin note, never shown to parents
+  discount_type ENUM('percent','fixed') NOT NULL,
+  discount_value DECIMAL(10,2) NOT NULL,            -- 20 = 20% or 20 EGP
+  applies_to ENUM('all','subscription','order') NOT NULL DEFAULT 'all',
+  min_amount DECIMAL(10,2) NULL,                    -- only for charges of at least this much
+  max_uses INT UNSIGNED NULL,                       -- total uses for everyone (NULL = unlimited)
+  max_uses_per_user INT UNSIGNED NULL DEFAULT 1,    -- uses per parent (NULL = unlimited)
+  starts_at DATETIME NULL,
+  ends_at DATETIME NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Every charge goes through here. kind + ref_id point at the subscription,
 -- order or tag request being paid. 'manual' until a gateway is connected.
 CREATE TABLE payments (
@@ -168,7 +186,11 @@ CREATE TABLE payments (
   user_id INT UNSIGNED NOT NULL,
   kind ENUM('subscription','order','replacement') NOT NULL,
   ref_id INT UNSIGNED NOT NULL,
-  amount DECIMAL(10,2) NOT NULL,
+  amount DECIMAL(10,2) NOT NULL,          -- what the parent pays, after any discount
+  original_amount DECIMAL(10,2) NULL,     -- price before the promo code
+  discount DECIMAL(10,2) NOT NULL DEFAULT 0,
+  promo_code_id INT UNSIGNED NULL,
+  promo_code VARCHAR(40) NULL,
   currency CHAR(3) NOT NULL DEFAULT 'EGP',
   provider VARCHAR(30) NOT NULL DEFAULT 'manual',
   provider_ref VARCHAR(190) NULL,
@@ -177,7 +199,8 @@ CREATE TABLE payments (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_ref (kind, ref_id),
   INDEX idx_status (status, created_at),
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (promo_code_id) REFERENCES promo_codes(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE scan_logs (

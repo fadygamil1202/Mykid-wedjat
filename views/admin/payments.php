@@ -14,7 +14,8 @@
         <td data-label="<?= e(t('pay.ref')) ?>" dir="ltr">MKW-<?= e($p['id']) ?></td>
         <td data-label="<?= e(t('field.parent')) ?>"><a href="/admin/users/<?= e($p['user_id']) ?>"><?= e($p['name']) ?></a></td>
         <td data-label="<?= e(t('pay.for')) ?>"><?= e(t('pay.kind.' . $p['kind'])) ?><?php if ($p['kind'] === 'order'): ?> <a href="/admin/orders/<?= e($p['ref_id']) ?>">#<?= e($p['ref_id']) ?></a><?php endif; ?></td>
-        <td data-label="<?= e(t('pay.amount')) ?>"><?= e(money($p['amount'])) ?></td>
+        <td data-label="<?= e(t('pay.amount')) ?>"><?= e(money($p['amount'])) ?>
+          <?php if ((float)$p['discount'] > 0): ?><br><span class="muted small"><span class="code" dir="ltr"><?= e($p['promo_code']) ?></span> −<?= e(money($p['discount'])) ?></span><?php endif; ?></td>
         <td data-label="<?= e(t('field.status')) ?>"><span class="badge badge-<?= e($p['status']) ?>"><?= e(t('pay.status.' . $p['status'])) ?></span><?php if ($p['provider_ref']): ?><br><span class="muted small"><?= e($p['provider_ref']) ?></span><?php endif; ?></td>
         <td data-label="<?= e(t('field.date')) ?>"><?= e(format_dt($p['paid_at'] ?: $p['created_at'])) ?></td>
         <td data-label="">

@@ -19,7 +19,7 @@
             <strong><?= e(money($it['unit_price'] * $it['qty'])) ?></strong></li>
       <?php endforeach; ?>
     </ul>
-    <?php $subtotal = $order['subtotal']; $shipping = $order['shipping_fee']; require BASE_PATH . '/views/shop/_totals.php'; ?>
+    <?php $subtotal = $order['subtotal']; $shipping = $order['shipping_fee']; $discount = $order['discount']; require BASE_PATH . '/views/shop/_totals.php'; ?>
   </section>
   <section class="card col-side">
     <h2><?= e(t('checkout.shipping')) ?></h2>
