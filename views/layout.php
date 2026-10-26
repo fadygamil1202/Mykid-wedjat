@@ -11,7 +11,8 @@ $links = match (true) {
         ['/admin', 'chart', t('admin.dashboard')], ['/admin/users', 'users', t('admin.users')],
         ['/admin/orders', 'box', t('admin.orders')], ['/admin/payments', 'money', t('admin.payments')],
         ['/admin/devices', 'nfc', t('admin.devices')], ['/admin/requests', 'refresh', t('admin.requests')],
-        ['/admin/subscriptions', 'shield', t('admin.subscriptions')], ['/admin/products', 'bag', t('admin.products')],
+        ['/admin/subscriptions', 'shield', t('admin.subscriptions')], ['/admin/promos', 'money', t('admin.promos')],
+        ['/admin/products', 'bag', t('admin.products')],
         ['/admin/plans', 'settings', t('admin.plans')],
     ],
     (bool)$u => [

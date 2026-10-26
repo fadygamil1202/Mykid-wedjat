@@ -32,7 +32,7 @@ return [
     ],
 
     // Support contact shown on the site
-    'support_phone' => '+201000000000',
+    'support_phone' => '+201279792658',
     'support_email' => 'support@example.com',
 
     // Email notifications through PHP mail() (works on Hostinger). Leave 'from' empty to turn off.

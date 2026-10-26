@@ -26,6 +26,8 @@
       <?php endforeach; ?>
     </ul>
     <?php require BASE_PATH . '/views/shop/_totals.php'; ?>
+    <label style="margin-bottom:1rem"><?= e(t('promo.label')) ?>
+      <input name="promo_code" placeholder="<?= e(t('promo.placeholder')) ?>" autocapitalize="characters" autocomplete="off" dir="ltr" maxlength="40"></label>
     <button class="btn btn-primary btn-block" type="submit"><?= e(t('checkout.place')) ?></button>
     <p class="hint center" style="margin-top:.5rem"><?= e(t('checkout.pay_next')) ?></p>
   </section>

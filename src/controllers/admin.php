@@ -410,3 +410,119 @@ function admin_plan_update(int $id): void
     flash('success', t('saved'));
     redirect('admin/plans');
 }
+
+// ---------- Promo codes ----------
+
+function admin_promos(): void
+{
+    require_admin();
+    view('admin/promos', [
+        'title'  => t('admin.promos'),
+        'promos' => q_all("SELECT pc.*,
+                (SELECT COUNT(*) FROM payments p WHERE p.promo_code_id=pc.id AND p.status='paid') used,
+                (SELECT COUNT(*) FROM payments p WHERE p.promo_code_id=pc.id AND p.status='pending') waiting,
+                (SELECT COALESCE(SUM(discount),0) FROM payments p WHERE p.promo_code_id=pc.id AND p.status='paid') given
+            FROM promo_codes pc ORDER BY pc.is_active DESC, pc.created_at DESC"),
+        'promo'  => null,
+    ]);
+}
+
+/** Validated form values, or null (with a flash message) when something is wrong. */
+function promo_input(?int $id = null): ?array
+{
+    $d = [
+        'code'              => strtoupper(input('code')),
+        'description'       => mb_substr(input('description'), 0, 190) ?: null,
+        'discount_type'     => input('discount_type') === 'fixed' ? 'fixed' : 'percent',
+        'discount_value'    => filter_var(input('discount_value'), FILTER_VALIDATE_FLOAT),
+        'applies_to'        => in_array(input('applies_to'), ['all', 'subscription', 'order'], true) ? input('applies_to') : 'all',
+        'min_amount'        => input('min_amount') === '' ? null : filter_var(input('min_amount'), FILTER_VALIDATE_FLOAT),
+        'max_uses'          => input('max_uses') === '' ? null : filter_var(input('max_uses'), FILTER_VALIDATE_INT),
+        'max_uses_per_user' => input('max_uses_per_user') === '' ? null : filter_var(input('max_uses_per_user'), FILTER_VALIDATE_INT),
+        'starts_at'         => input('starts_at') ?: null,
+        'ends_at'           => input('ends_at') ?: null,
+        'is_active'         => isset($_POST['is_active']) ? 1 : 0,
+    ];
+    foreach (['starts_at', 'ends_at'] as $f) {
+        if ($d[$f] !== null) {
+            $ts = strtotime($d[$f]);
+            // An end date means "until the end of that day"
+            $d[$f] = $ts === false ? false : date('Y-m-d H:i:s', $f === 'ends_at' && strlen($d[$f]) === 10 ? strtotime('23:59:59', $ts) : $ts);
+        }
+    }
+    $error = match (true) {
+        !preg_match('/^[A-Z0-9_-]{3,40}$/', $d['code']) => 'admin.promo_bad_code',
+        $d['discount_value'] === false || $d['discount_value'] <= 0
+            || ($d['discount_type'] === 'percent' && $d['discount_value'] > 100) => 'admin.promo_bad_value',
+        $d['min_amount'] === false || ($d['min_amount'] !== null && $d['min_amount'] < 0)
+            || $d['max_uses'] === false || ($d['max_uses'] !== null && $d['max_uses'] < 1)
+            || $d['max_uses_per_user'] === false || ($d['max_uses_per_user'] !== null && $d['max_uses_per_user'] < 1) => 'admin.promo_bad_limits',
+        $d['starts_at'] === false || $d['ends_at'] === false
+            || ($d['starts_at'] && $d['ends_at'] && $d['ends_at'] < $d['starts_at']) => 'admin.promo_bad_dates',
+        (bool)q_one('SELECT 1 FROM promo_codes WHERE code=? AND id<>?', [$d['code'], $id ?? 0]) => 'admin.promo_taken',
+        default => null,
+    };
+    if ($error) {
+        flash('error', t($error));
+        $_SESSION['old_promo'] = $_POST;
+        return null;
+    }
+    return $d;
+}
+
+function admin_promo_create(): void
+{
+    require_admin();
+    $d = promo_input();
+    if (!$d) redirect('admin/promos#new');
+    q('INSERT INTO promo_codes (' . implode(',', array_keys($d)) . ') VALUES (' . rtrim(str_repeat('?,', count($d)), ',') . ')', array_values($d));
+    flash('success', t('admin.promo_saved', ['code' => $d['code']]));
+    redirect('admin/promos');
+}
+
+function admin_promo_edit(int $id): void
+{
+    require_admin();
+    $promo = q_one('SELECT * FROM promo_codes WHERE id=?', [$id]);
+    if (!$promo) abort(404);
+    view('admin/promo_edit', [
+        'title'    => t('admin.promo_edit'),
+        'promo'    => $promo,
+        'payments' => q_all('SELECT p.*, u.name FROM payments p JOIN users u ON u.id=p.user_id
+                             WHERE p.promo_code_id=? ORDER BY p.id DESC LIMIT 50', [$id]),
+    ]);
+}
+
+function admin_promo_update(int $id): void
+{
+    require_admin();
+    if (!q_one('SELECT 1 FROM promo_codes WHERE id=?', [$id])) abort(404);
+    $d = promo_input($id);
+    if (!$d) redirect("admin/promos/{$id}");
+    $set = implode(',', array_map(fn($k) => "$k=?", array_keys($d)));
+    q("UPDATE promo_codes SET {$set} WHERE id=?", [...array_values($d), $id]);
+    flash('success', t('admin.promo_saved', ['code' => $d['code']]));
+    redirect('admin/promos');
+}
+
+function admin_promo_toggle(int $id): void
+{
+    require_admin();
+    q('UPDATE promo_codes SET is_active = 1 - is_active WHERE id=?', [$id]);
+    flash('success', t('saved'));
+    redirect('admin/promos');
+}
+
+/** Only unused codes can be deleted; used ones are switched off so the history stays readable. */
+function admin_promo_delete(int $id): void
+{
+    require_admin();
+    if (q_one('SELECT 1 FROM payments WHERE promo_code_id=? LIMIT 1', [$id])) {
+        q('UPDATE promo_codes SET is_active=0 WHERE id=?', [$id]);
+        flash('info', t('admin.promo_deactivated'));
+    } else {
+        q('DELETE FROM promo_codes WHERE id=?', [$id]);
+        flash('success', t('admin.promo_deleted'));
+    }
+    redirect('admin/promos');
+}

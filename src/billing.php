@@ -39,6 +39,76 @@ function payment_checkout_url(array $payment): ?string
     return null;
 }
 
+// ---------- Promo codes ----------
+
+/** Times a code is used: payments still waiting or already paid (declined ones free the use again). */
+function promo_uses(int $promoId, ?int $userId = null, int $exceptPaymentId = 0): int
+{
+    $sql = "SELECT COUNT(*) n FROM payments WHERE promo_code_id = ? AND status IN ('pending','paid') AND id <> ?";
+    $params = [$promoId, $exceptPaymentId];
+    if ($userId) {
+        $sql .= ' AND user_id = ?';
+        $params[] = $userId;
+    }
+    return (int)q_one($sql, $params)['n'];
+}
+
+/** Discount the code gives on this payment, or a translation key explaining why it can't be used. */
+function promo_check(?array $promo, array $payment): float|string
+{
+    $base = (float)($payment['original_amount'] ?? $payment['amount']);
+    if (!$promo || !$promo['is_active']) return 'promo.invalid';
+    if ($promo['starts_at'] && strtotime($promo['starts_at']) > time()) return 'promo.not_started';
+    if ($promo['ends_at'] && strtotime($promo['ends_at']) < time()) return 'promo.expired';
+    if ($promo['applies_to'] !== 'all' && $promo['applies_to'] !== $payment['kind']) return 'promo.wrong_kind';
+    if ($promo['min_amount'] !== null && $base < (float)$promo['min_amount']) return 'promo.min_amount';
+    if ($promo['max_uses'] !== null && promo_uses((int)$promo['id'], null, (int)$payment['id']) >= (int)$promo['max_uses']) return 'promo.used_up';
+    if ($promo['max_uses_per_user'] !== null
+        && promo_uses((int)$promo['id'], (int)$payment['user_id'], (int)$payment['id']) >= (int)$promo['max_uses_per_user']) return 'promo.already_used';
+
+    $discount = $promo['discount_type'] === 'percent'
+        ? round($base * (float)$promo['discount_value'] / 100, 2)
+        : (float)$promo['discount_value'];
+    return min($discount, $base);
+}
+
+/**
+ * Apply a code to a waiting payment (replaces any code already on it).
+ * Returns null on success or a translation key with the reason it was refused.
+ * A 100% discount marks the payment as paid straight away.
+ */
+function payment_apply_promo(int $paymentId, string $code): ?string
+{
+    $pay = q_one("SELECT * FROM payments WHERE id = ? AND status = 'pending'", [$paymentId]);
+    if (!$pay) return 'promo.invalid';
+    $promo = q_one('SELECT * FROM promo_codes WHERE code = ?', [strtoupper(trim($code))]);
+    $result = promo_check($promo, $pay);
+    if (is_string($result)) return $result;
+
+    $base = (float)($pay['original_amount'] ?? $pay['amount']);
+    payment_set_discount($pay, $base, $result, (int)$promo['id'], $promo['code']);
+    if ($base - $result <= 0) payment_mark_paid($paymentId, 'PROMO ' . $promo['code']);
+    return null;
+}
+
+function payment_remove_promo(int $paymentId): void
+{
+    $pay = q_one("SELECT * FROM payments WHERE id = ? AND status = 'pending'", [$paymentId]);
+    if ($pay && $pay['promo_code_id'] !== null) {
+        payment_set_discount($pay, (float)($pay['original_amount'] ?? $pay['amount']), 0, null, null);
+    }
+}
+
+/** Store the discount on the payment, and on the order so its total matches what is paid. */
+function payment_set_discount(array $pay, float $base, float $discount, ?int $promoId, ?string $code): void
+{
+    q('UPDATE payments SET original_amount = ?, discount = ?, amount = ?, promo_code_id = ?, promo_code = ? WHERE id = ?',
+      [$base, $discount, $base - $discount, $promoId, $code, $pay['id']]);
+    if ($pay['kind'] === 'order') {
+        q('UPDATE orders SET discount = ?, total = subtotal + shipping_fee - ? WHERE id = ?', [$discount, $discount, $pay['ref_id']]);
+    }
+}
+
 /** Mark a payment as paid and activate what it pays for. Safe to call twice. */
 function payment_mark_paid(int $paymentId, ?string $providerRef = null): bool
 {

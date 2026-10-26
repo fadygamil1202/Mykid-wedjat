@@ -112,6 +112,11 @@ function checkout_submit(): void
     unset($_SESSION['cart']);
     notify_admins('notify.admin_order', ['id' => $orderId, 'name' => $user['name']]);
     flash('success', t('checkout.placed', ['id' => $orderId]));
+    // A refused code doesn't stop the order: the parent can fix it on the payment page
+    if (($code = input('promo_code')) !== '') {
+        $error = payment_apply_promo($paymentId, $code);
+        flash($error ? 'error' : 'success', $error ? t($error) : t('promo.applied'));
+    }
     redirect("payments/{$paymentId}");
 }
 
@@ -194,4 +199,27 @@ function payment_show(int $id): void
         default => t('pay.for_replacement'),
     };
     view('billing/payment', ['title' => t('pay.title'), 'payment' => $payment, 'what' => $what]);
+}
+
+function payment_promo_apply(int $id): void
+{
+    $user = require_parent();
+    if (!q_one('SELECT 1 FROM payments WHERE id=? AND user_id=?', [$id, $user['id']])) abort(404);
+    // Codes can be guessed, so limit attempts like logins
+    if (!rate_limit('promo', 15, 900)) {
+        flash('error', t('login.too_many'));
+        redirect("payments/{$id}");
+    }
+    $error = input('promo_code') === '' ? 'promo.invalid' : payment_apply_promo($id, input('promo_code'));
+    flash($error ? 'error' : 'success', $error ? t($error) : t('promo.applied'));
+    redirect("payments/{$id}");
+}
+
+function payment_promo_remove(int $id): void
+{
+    $user = require_parent();
+    if (!q_one('SELECT 1 FROM payments WHERE id=? AND user_id=?', [$id, $user['id']])) abort(404);
+    payment_remove_promo($id);
+    flash('success', t('promo.removed'));
+    redirect("payments/{$id}");
 }

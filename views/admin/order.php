@@ -21,7 +21,7 @@
           <?php endif; ?>
         </div>
       <?php endforeach; ?>
-      <?php $subtotal = $order['subtotal']; $shipping = $order['shipping_fee']; require BASE_PATH . '/views/shop/_totals.php'; ?>
+      <?php $subtotal = $order['subtotal']; $shipping = $order['shipping_fee']; $discount = $order['discount']; require BASE_PATH . '/views/shop/_totals.php'; ?>
       <?php if ($payment): ?>
         <p class="small"><?= e(t('pay.title')) ?>: <strong dir="ltr">MKW-<?= e($payment['id']) ?></strong> <span class="badge badge-<?= e($payment['status']) ?>"><?= e(t('pay.status.' . $payment['status'])) ?></span>
         <?php if ($payment['status'] === 'pending'): ?><a href="/admin/payments?status=pending"><?= e(t('admin.mark_paid')) ?></a><?php endif; ?></p>

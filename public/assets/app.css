@@ -266,6 +266,14 @@ td .row { flex-wrap: nowrap; }
 .device-main { flex: 1 1 180px; min-width: 0; }
 .device-main strong { display: block; }
 
+/* Promo codes */
+.promo-form { display: flex; gap: .5rem; margin: 0 0 1rem; }
+.promo-form input { flex: 1; text-transform: uppercase; }
+.promo-applied { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .5rem; background: var(--ok-bg); color: var(--ok-text);
+                 border-radius: var(--radius-sm); padding: .65rem .9rem; margin-bottom: 1rem; font-weight: 600; }
+.promo-applied form { margin: 0; }
+.code { font-family: ui-monospace, Menlo, monospace; font-weight: 700; letter-spacing: .03em; }
+
 /* Timeline */
 .timeline { display: flex; gap: .25rem; margin: .5rem 0 1rem; }
 .timeline span { flex: 1; height: 8px; border-radius: 999px; background: var(--line); }

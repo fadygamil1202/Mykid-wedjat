@@ -2,10 +2,27 @@
   <h1><?= e(t('pay.title')) ?></h1>
   <div class="facts">
     <div><span class="label"><?= e(t('pay.for')) ?></span><?= e($what) ?></div>
-    <div><span class="label"><?= e(t('pay.amount')) ?></span><span class="price"><?= e(money($payment['amount'])) ?></span></div>
+    <div><span class="label"><?= e(t('pay.amount')) ?></span>
+      <?php if ((float)$payment['discount'] > 0): ?><s class="muted"><?= e(money($payment['original_amount'])) ?></s><?php endif; ?>
+      <span class="price"><?= e(money($payment['amount'])) ?></span></div>
     <div><span class="label"><?= e(t('pay.ref')) ?></span><strong dir="ltr">MKW-<?= e($payment['id']) ?></strong></div>
     <div><span class="label"><?= e(t('field.status')) ?></span><span class="badge badge-<?= e($payment['status']) ?>"><?= e(t('pay.status.' . $payment['status'])) ?></span></div>
   </div>
+  <?php if ((float)$payment['discount'] > 0): ?>
+    <div class="promo-applied">
+      <span><?= icon('check') ?> <?= e(t('promo.code_label')) ?> <strong dir="ltr"><?= e($payment['promo_code']) ?></strong> · −<?= e(money($payment['discount'])) ?></span>
+      <?php if ($payment['status'] === 'pending'): ?>
+        <form method="post" action="/payments/<?= e($payment['id']) ?>/promo/remove"><?= csrf_field() ?>
+          <button class="link-btn small" type="submit"><?= e(t('remove')) ?></button></form>
+      <?php endif; ?>
+    </div>
+  <?php elseif ($payment['status'] === 'pending'): ?>
+    <form method="post" action="/payments/<?= e($payment['id']) ?>/promo" class="promo-form">
+      <?= csrf_field() ?>
+      <input name="promo_code" placeholder="<?= e(t('promo.placeholder')) ?>" aria-label="<?= e(t('promo.placeholder')) ?>" autocapitalize="characters" autocomplete="off" dir="ltr" maxlength="40">
+      <button class="btn" type="submit"><?= e(t('promo.apply')) ?></button>
+    </form>
+  <?php endif; ?>
   <?php if ($payment['status'] === 'pending'): ?>
     <div class="hint warn" style="font-size:1rem">
       <strong><?= e(t('pay.how')) ?></strong><br>
