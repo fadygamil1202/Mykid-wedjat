@@ -1,5 +1,7 @@
 <div class="page-head">
-  <div><h1><?= e($u['name']) ?></h1><p class="muted"><span dir="ltr"><?= e($u['email']) ?></span> · <span dir="ltr"><?= e($u['phone']) ?></span> · <?= e(t('role.' . $u['role'])) ?></p></div>
+  <div><h1><?= e($u['name']) ?></h1><p class="muted"><span dir="ltr"><?= e($u['email']) ?></span> · <span dir="ltr"><?= e($u['phone']) ?></span> · <?= e(t('role.' . $u['role'])) ?>
+    · <?php if ($u['email_verified_at']): ?><span class="badge badge-active"><?= e(t('admin.email_verified')) ?></span><?php else: ?><span class="badge badge-pending"><?= e(t('admin.email_unverified')) ?></span>
+      <form method="post" action="/admin/users/<?= e($u['id']) ?>/verify" class="inline" data-confirm="<?= e(t('admin.verify_confirm')) ?>"><?= csrf_field() ?><button class="link-btn small" type="submit"><?= e(t('admin.verify_btn')) ?></button></form><?php endif; ?></p></div>
   <form method="post" action="/admin/users/<?= e($u['id']) ?>/toggle" data-confirm="<?= e(t('admin.toggle_confirm')) ?>"><?= csrf_field() ?>
     <button class="btn btn-sm <?= $u['is_active'] ? 'btn-danger' : 'btn-primary' ?>" type="submit"><?= e($u['is_active'] ? t('admin.disable') : t('admin.enable')) ?></button></form>
 </div>

@@ -120,3 +120,13 @@ Parents can add a plan to the cart (from the plans page, or from the "Add a subs
 - **Promo codes:** a combined payment counts as a shop order, so codes for "Everything" or "Shop orders" work on it; codes for "Subscriptions" only work when the plan is paid on its own.
 
 **Existing database:** run `database/migrations/002_subscription_in_orders.sql` once in phpMyAdmin (after `001_promo_codes.sql`) before uploading the new files.
+
+## Email: account confirmation & password reset
+
+Set up the `mail` block in `config.php` (Hostinger: create the mailbox in **hPanel → Emails**, then `smtp.hostinger.com`, port `465`, `ssl`, the mailbox address and its password). Emails go out in the parent's language.
+
+- **Confirm email:** after signing up, parents get a confirmation link (valid 48 hours). Until they click it, their account only shows the "check your email" page, where they can resend the email or fix a mistyped address. Admins aren't asked. An admin can confirm a parent by hand on **Admin → Users → the parent** ("Mark as confirmed"). Turn this off with `'require_email_verification' => false`. It also does nothing while `mail.from` is empty.
+- **Forgot password:** a "Forgot your password?" link on the sign-in page sends a reset link, valid 1 hour and usable once. The page answers the same whether the email exists or not, so nobody can probe which emails have accounts.
+- Links are random one-time tokens. Only their SHA-256 hash is stored (`email_tokens`).
+
+**Existing database:** run `database/migrations/003_email_verification.sql` once in phpMyAdmin before uploading the new files. It marks everyone who already registered as confirmed, so nobody is locked out.

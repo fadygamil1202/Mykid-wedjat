@@ -241,11 +241,10 @@ function notify(int $userId, string $key, array $vars = []): void
     }
     $message = mb_substr(t($key, $vars, $user['lang']), 0, 500);
     q('INSERT INTO notifications (user_id, message) VALUES (?, ?)', [$userId, $message]);
-    $from = (string)config('mail_from', '');
-    if ($from === '' || !$user['is_active']) return;
-    $subject = '=?UTF-8?B?' . base64_encode(t('app.name', [], $user['lang'])) . '?=';
-    $headers = "From: {$from}\r\nContent-Type: text/plain; charset=UTF-8\r\n";
-    @mail($user['email'], $subject, $message . "\n\n" . site_base() . '/notifications', $headers);
+    if (!mail_configured() || !$user['is_active']) return;
+    [$html, $text] = email_body($user['lang'], t('app.name', [], $user['lang']), [$message],
+        [t('nav.notifications', [], $user['lang']), site_base() . '/notifications']);
+    send_mail($user['email'], t('app.name', [], $user['lang']) . ' · ' . mb_substr($message, 0, 60), $html, $text);
 }
 
 function notify_admins(string $key, array $vars = []): void
