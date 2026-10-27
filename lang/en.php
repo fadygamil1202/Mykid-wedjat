@@ -122,10 +122,10 @@ return [
 
     // Card
     'card.title' => 'Emergency card', 'card.heading' => 'EMERGENCY', 'card.blood' => 'Blood', 'card.front' => 'Front', 'card.back' => 'Back',
-    'card.tap_text' => 'If I need help, tap your phone here or scan the back.',
+    'card.front_title' => 'Tap for help', 'card.tap_text' => 'If I need help, tap your phone here or scan the back.',
     'card.back_title' => 'Found me? Please help', 'card.back_1' => 'Tap this card with your phone', 'card.back_2' => 'Or scan the QR code',
     'card.back_3' => 'Press "Call" to reach my family', 'card.back_foot' => 'No app needed · Emergency 123',
-    'card.intro' => 'This is how your child\'s card is printed.', 'card.qr_hidden' => 'QR code hidden',
+    'card.intro' => 'Every card is printed with the same design. Your child\'s details live securely behind the card\'s link, so you can update them at any time without a new card.', 'card.qr_hidden' => 'QR code hidden',
     'card.qr_hidden_text' => 'For your child\'s safety, the real QR code and link are never shown online, not even to you. They exist only on the physical device we send you.',
     'card.order' => 'Order this card',
 
