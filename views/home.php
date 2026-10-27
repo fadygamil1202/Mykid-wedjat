@@ -8,17 +8,7 @@
     </div>
   </div>
   <div class="hero-art">
-    <div class="id-card">
-      <div class="band"><span>+ <?= e(t('card.heading')) ?></span><span dir="ltr">SOS</span></div>
-      <div class="body">
-        <div class="who">
-          <div class="name"><?= e(t('card.front_title')) ?></div>
-          <div class="tap"><?= e(t('card.tap_text')) ?></div>
-        </div>
-        <svg class="nfc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 8a6 6 0 0 1 0 8"/><path d="M12 5a10 10 0 0 1 0 14"/><path d="M16 2.5a13.5 13.5 0 0 1 0 19"/><circle cx="4.5" cy="12" r="1.5"/></svg>
-      </div>
-      <div class="foot"><img src="/assets/logo.svg" alt=""> MyKid Wedjat</div>
-    </div>
+    <?php require BASE_PATH . '/views/partials/id_card_front.php'; ?>
   </div>
 </section>
 
