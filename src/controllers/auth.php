@@ -83,8 +83,13 @@ function register_submit(): void
     }
     q("INSERT INTO users (role, name, email, phone, password_hash, lang) VALUES ('parent', ?, ?, ?, ?, ?)",
       [$name, $email, $phone, password_hash($password, PASSWORD_DEFAULT), current_lang()]);
+    $userId = (int)db()->lastInsertId();
     unset($_SESSION['old']);
-    login_user((int)db()->lastInsertId());
+    login_user($userId);
+    if (email_verification_required()) {
+        send_verification_email(q_one('SELECT * FROM users WHERE id = ?', [$userId]));
+        redirect('verify-email');
+    }
     flash('success', t('register.welcome'));
     redirect('children/new');
 }
@@ -146,7 +151,7 @@ function install_submit(): void
             if ($code !== '') db()->exec($code);
         }
     }
-    q("INSERT INTO users (role, name, email, password_hash, lang) VALUES ('admin', ?, ?, ?, ?)",
+    q("INSERT INTO users (role, name, email, email_verified_at, password_hash, lang) VALUES ('admin', ?, ?, NOW(), ?, ?)",
       [$name, $email, password_hash($password, PASSWORD_DEFAULT), current_lang()]);
     login_user((int)db()->lastInsertId());
     flash('success', t('install.done'));

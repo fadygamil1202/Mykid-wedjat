@@ -47,6 +47,7 @@ if (session_status() !== PHP_SESSION_ACTIVE && PHP_SAPI !== 'cli') {
 require __DIR__ . '/db.php';
 require __DIR__ . '/i18n.php';
 require __DIR__ . '/helpers.php';
+require __DIR__ . '/mailer.php';
 require __DIR__ . '/auth.php';
 require __DIR__ . '/access.php';
 require __DIR__ . '/billing.php';

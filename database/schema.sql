@@ -7,12 +7,26 @@ CREATE TABLE users (
   role ENUM('parent','admin') NOT NULL DEFAULT 'parent',
   name VARCHAR(190) NOT NULL,
   email VARCHAR(190) NOT NULL UNIQUE,
+  email_verified_at DATETIME NULL,      -- set when the user clicks the link in the verification email
   phone VARCHAR(40) NULL,
   password_hash VARCHAR(255) NOT NULL,
   lang CHAR(2) NOT NULL DEFAULT 'ar',
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   last_login_at DATETIME NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- One-time links sent by email (verify address, reset password). Only a SHA-256 hash is stored.
+CREATE TABLE email_tokens (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  purpose ENUM('verify','reset') NOT NULL,
+  token_hash CHAR(64) NOT NULL UNIQUE,
+  expires_at DATETIME NOT NULL,
+  used_at DATETIME NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_user_purpose (user_id, purpose),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE children (

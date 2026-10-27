@@ -13,6 +13,7 @@
       </label>
       <button class="btn btn-primary" type="submit"><?= e(t('login.submit')) ?></button>
     </form>
+    <p class="center small" style="margin:.75rem 0 0"><a href="/forgot-password"><?= e(t('login.forgot')) ?></a></p>
     <hr class="divider">
     <p class="center"><?= e(t('login.no_account')) ?> <a href="/register"><?= e(t('nav.register')) ?></a></p>
   </div>

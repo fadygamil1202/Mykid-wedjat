@@ -63,8 +63,21 @@ return [
     'support_phone' => '+201279792658',
     'support_email' => 'support@example.com',
 
-    // Email notifications through PHP mail() (works on Hostinger). Leave 'from' empty to turn off.
-    'mail_from' => '',
+    // Email: account confirmation, password reset and notifications.
+    // Hostinger: create the mailbox in hPanel > Emails, then use smtp.hostinger.com, port 465, 'ssl',
+    // the mailbox address as smtp_user and its password. Leave 'from' empty to send no email at all.
+    'mail' => [
+        'from'        => '',                       // e.g. no-reply@mykidwedjat.com
+        'from_name'   => 'MyKid Wedjat',
+        'smtp_host'   => 'smtp.hostinger.com',     // empty = use PHP mail() instead of SMTP
+        'smtp_port'   => 465,
+        'smtp_secure' => 'ssl',                    // 'ssl' (465) or 'tls' (587)
+        'smtp_user'   => '',                       // the mailbox address
+        'smtp_pass'   => '',                       // the mailbox password
+    ],
+    // Parents must click the link in a confirmation email before using their account
+    // (only applies when email is set up above).
+    'require_email_verification' => true,
 
     // Show the technical error message on the error page. Turn on only while fixing a problem.
     'debug' => false,

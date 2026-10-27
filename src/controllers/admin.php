@@ -69,7 +69,7 @@ function admin_user_create(): void
         flash('error', t('register.email_taken'));
         redirect('admin/users?role=admin');
     }
-    q("INSERT INTO users (role, name, email, password_hash, lang) VALUES ('admin', ?, ?, ?, ?)",
+    q("INSERT INTO users (role, name, email, email_verified_at, password_hash, lang) VALUES ('admin', ?, ?, NOW(), ?, ?)",
       [$name, $email, password_hash($password, PASSWORD_DEFAULT), current_lang()]);
     flash('success', t('admin.admin_created'));
     redirect('admin/users?role=admin');
@@ -104,6 +104,15 @@ function admin_user_toggle(int $id): void
         q('UPDATE users SET is_active = 1 - is_active WHERE id=?', [$id]);
         flash('success', t('saved'));
     }
+    redirect("admin/users/{$id}");
+}
+
+/** Confirm a parent's email by hand (e.g. they can't receive the email and called support). */
+function admin_user_verify(int $id): void
+{
+    require_admin();
+    q('UPDATE users SET email_verified_at = COALESCE(email_verified_at, NOW()) WHERE id = ?', [$id]);
+    flash('success', t('saved'));
     redirect("admin/users/{$id}");
 }
 
