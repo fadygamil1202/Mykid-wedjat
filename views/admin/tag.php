@@ -30,4 +30,3 @@
     <?php foreach ($scans as $s): ?><li><span><?= icon($s['action'] === 'call' ? 'phone' : 'eye') ?> <?= e(t('scan.kind.' . $s['action'])) ?></span><span class="muted small"><?= e(format_dt($s['created_at'])) ?></span></li><?php endforeach; ?>
   </ul>
 </section>
-<script src="/assets/qrcode.js"></script>
