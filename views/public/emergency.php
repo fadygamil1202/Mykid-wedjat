@@ -60,7 +60,7 @@
         <?php endif; ?>
       <?php endforeach; ?>
     <?php elseif (!empty($preview)): ?>
-      <div class="em-note"><?= e($subscribed ? t('public.preview_no_consent') : t('public.preview_no_sub')) ?></div>
+      <div class="em-note"><?= e(t('public.preview_no_consent')) ?></div>
     <?php endif; ?>
   </main>
 

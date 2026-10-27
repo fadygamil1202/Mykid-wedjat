@@ -32,7 +32,7 @@ return [
     'plans.f1' => 'Emergency page for all your children', 'plans.f2' => 'Notification on every scan and call',
     'plans.f3' => 'Lock or replace lost devices', 'plans.f4' => 'Medical details shown to first responders',
     'plans.choose' => 'Choose plan', 'plans.renew' => 'Renew / extend', 'plans.start' => 'Get started',
-    'plans.note' => 'Without a subscription the emergency page still shows your child\'s first name and the call buttons, so no one is ever left with a blank page.',
+    'plans.note' => 'The emergency card works while your subscription is active. Without one, anyone who scans it only sees that the card is not active.',
 
     // Auth
     'login.title' => 'Sign in', 'login.subtitle' => 'Welcome back.', 'login.submit' => 'Sign in',
@@ -86,7 +86,7 @@ return [
 
     // Subscription banner
     'sub.active_title' => ':plan plan active', 'sub.until' => 'until :date', 'sub.manage' => 'Manage',
-    'sub.none_title' => 'No active subscription', 'sub.none_text' => 'Medical details are hidden on the emergency page until you subscribe.',
+    'sub.none_title' => 'No active subscription', 'sub.none_text' => 'Your children\'s cards are not working: anyone who scans them sees "card not active". Subscribe to turn them on.',
     'sub.subscribe' => 'Subscribe', 'sub.intro' => 'One subscription covers all your children. Renewing adds time after your current period ends.',
     'sub.pending' => 'A payment of :amount is waiting.', 'sub.pending_link' => 'How to pay', 'sub.history' => 'History',
     'sub.state.active' => 'Active', 'sub.state.expired' => 'Expired', 'sub.state.pending' => 'Awaiting payment',
@@ -99,7 +99,7 @@ return [
     'children.delete' => 'Remove this child', 'children.delete_confirm' => 'Remove this child, their emergency page and all their devices? This cannot be undone.',
     'children.limit' => 'You can add up to 10 children.', 'children.parent_relation' => 'Parent',
 
-    'child.no_sub' => 'Without a subscription, the emergency page shows only the name and call buttons.',
+    'child.no_sub' => 'This card is not working right now: without a subscription, anyone who scans it sees "card not active".',
     'child.no_consent' => 'The emergency page is not complete yet.', 'child.fill_now' => 'Finish it now',
     'child.edit_emergency' => 'Emergency info', 'child.view_card' => 'See the card', 'child.preview' => 'Preview emergency page',
     'child.devices' => 'Devices', 'child.add_device' => 'Get a device', 'child.no_devices' => 'No devices yet. Order a card, bracelet or necklace from the shop.',
@@ -149,7 +149,6 @@ return [
     'public.logged' => 'Opening this page notifies the parent.',
     'public.not_found' => 'This card is not active.', 'public.no_contact' => 'No contact available.',
     'public.preview_banner' => 'Preview: this is what someone who scans will see',
-    'public.preview_no_sub' => 'Medical details are hidden because you have no active subscription.',
     'public.preview_no_consent' => 'Medical details are hidden until you tick the consent box in Emergency info.',
     'public.locked_label' => 'DEVICE LOCKED', 'public.locked_title' => 'This device has been deactivated',
     'public.locked_text' => 'The owner has locked it, so no information can be shown. If a child near you needs help, call emergency services.',
@@ -344,4 +343,10 @@ return [
     'online.redirect_btn' => 'Continue to payment',
     'online.reason' => 'The bank said: :reason.',
     'online.below_min' => 'Online payment with :name starts from :min. Please pay this amount by transfer below, or choose the yearly plan / add it to a shop order to pay online.',
+
+    // Card without subscription
+    'public.inactive_label' => 'CARD NOT ACTIVE',
+    'public.inactive_title' => 'This card is not active',
+    'public.inactive_text' => 'This card has no active service, so no information can be shown. If a child near you needs help, call emergency services.',
+    'notify.scan_inactive' => ':name\'s :type was scanned at :time, but it is not active, so nothing was shown. Renew your subscription to turn it back on.',
 ];

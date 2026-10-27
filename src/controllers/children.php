@@ -182,6 +182,10 @@ function child_preview(int $id): void
 {
     $user = require_parent();
     $child = own_child($user, $id);
+    if (!active_subscription((int)$user['id'])) {
+        view('public/locked', ['title' => t('public.title'), 'variant' => 'inactive', 'preview' => true], 'layout_plain');
+        return;
+    }
     $data = emergency_page_data($child, (int)$user['id']);
     view('public/emergency', $data + ['title' => t('public.title'), 'token' => '', 'preview' => true], 'layout_plain');
 }

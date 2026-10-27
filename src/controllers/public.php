@@ -2,9 +2,10 @@
 declare(strict_types=1);
 
 /**
- * What the emergency page shows for a child.
- * Medical details need an active subscription and the parent's consent; without
- * them the page still shows the first name and the call buttons, never a blank page.
+ * What the emergency page shows for a child (only used while the parent has an active
+ * subscription; without one the card shows the "not active" page instead).
+ * Medical details also need the parent's consent; without it the page shows the first
+ * name and the call buttons.
  */
 function emergency_page_data(array $child, int $parentId): array
 {
@@ -46,18 +47,21 @@ function public_emergency(string $token): void
     $tag = load_tag_by_token($token);
     $parentId = (int)$tag['parent_id'];
 
+    // Without an active subscription the card doesn't work at all
+    $subscribed = (bool)active_subscription($parentId);
+
     // Log every scan; tell the parent at most once per 10 minutes per device.
     $recent = q_one("SELECT 1 FROM scan_logs WHERE tag_id=? AND action='view' AND created_at > NOW() - INTERVAL 10 MINUTE", [$tag['id']]);
     log_scan($tag, 'view');
     if (!$recent) {
-        $key = $tag['status'] === 'active' ? 'notify.scan' : 'notify.scan_locked';
+        $key = $tag['status'] !== 'active' ? 'notify.scan_locked' : ($subscribed ? 'notify.scan' : 'notify.scan_inactive');
         notify($parentId, $key, ['name' => $tag['first_name'], 'type' => '@tag.' . $tag['type'], 'time' => date('H:i')]);
     }
 
     header('X-Robots-Tag: noindex, nofollow');
     header('Cache-Control: no-store');
-    if ($tag['status'] !== 'active') {
-        view('public/locked', ['title' => t('public.title')], 'layout_plain');
+    if ($tag['status'] !== 'active' || !$subscribed) {
+        view('public/locked', ['title' => t('public.title'), 'variant' => $tag['status'] !== 'active' ? 'locked' : 'inactive'], 'layout_plain');
         return;
     }
     $child = ['id' => $tag['child_id'], 'first_name' => $tag['first_name'], 'date_of_birth' => $tag['date_of_birth']];
@@ -73,7 +77,7 @@ function public_emergency(string $token): void
 function public_call(string $token, int $contactId): void
 {
     $tag = load_tag_by_token($token);
-    if ($tag['status'] !== 'active') abort(404, t('public.not_found'));
+    if ($tag['status'] !== 'active' || !active_subscription((int)$tag['parent_id'])) abort(404, t('public.not_found'));
     $contact = q_one('SELECT * FROM emergency_contacts WHERE id=? AND child_id=?', [$contactId, $tag['child_id']]);
     if (!$contact) abort(404, t('public.no_contact'));
 
