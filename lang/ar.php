@@ -388,4 +388,5 @@ return [
     'admin.email_unverified' => 'الإيميل غير مؤكَّد',
     'admin.verify_btn' => 'تأكيد يدوي',
     'admin.verify_confirm' => 'تأكيد هذا البريد الإلكتروني يدويًا؟',
+    'footer.contact' => 'تواصل معنا',
 ];

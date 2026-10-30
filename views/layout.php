@@ -80,14 +80,24 @@ $links = match (true) {
   <?= $content ?>
 </main>
 
+<?php
+$supportPhone = (string)config('support_phone', '');
+$supportEmail = (string)config('support_email', '');
+$supportAddress = (string)config('support_address_' . current_lang(), config('support_address_en', ''));
+?>
 <footer class="footer">
   <div class="footer-in">
     <span>© <?= date('Y') ?> MyKid Wedjat — <?= e(t('footer.tagline')) ?></span>
     <span class="row">
       <a href="/shop"><?= e(t('nav.shop')) ?></a>
       <a href="/pricing"><?= e(t('nav.pricing')) ?></a>
-      <a href="tel:<?= e(clean_phone((string)config('support_phone', ''))) ?>" dir="ltr"><?= e(config('support_phone', '')) ?></a>
     </span>
+  </div>
+  <div class="footer-in footer-contact">
+    <strong><?= e(t('footer.contact')) ?></strong>
+    <?php if ($supportPhone): ?><a href="tel:<?= e(clean_phone($supportPhone)) ?>"><?= icon('phone') ?> <span dir="ltr"><?= e($supportPhone) ?></span></a><?php endif; ?>
+    <?php if ($supportEmail): ?><a href="mailto:<?= e($supportEmail) ?>"><?= icon('mail') ?> <span dir="ltr"><?= e($supportEmail) ?></span></a><?php endif; ?>
+    <?php if ($supportAddress): ?><a href="https://www.google.com/maps/search/?api=1&amp;query=<?= e(rawurlencode($supportAddress)) ?>" target="_blank" rel="noopener"><?= icon('pin') ?> <?= e($supportAddress) ?></a><?php endif; ?>
   </div>
 </footer>
 
