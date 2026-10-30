@@ -93,6 +93,10 @@ p { margin: 0 0 .75rem; }
 .footer { border-top: 1px solid var(--line); padding: 2rem 1rem calc(2rem + var(--safe-bottom)); color: var(--muted); font-size: .9rem; }
 .footer-in { max-width: 1160px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 1rem 2rem; justify-content: space-between; align-items: center; }
 .footer a { color: var(--muted); }
+.footer-contact { justify-content: flex-start; gap: .5rem 1.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--line); }
+.footer-contact strong { color: var(--text); }
+.footer-contact a { display: inline-flex; align-items: center; gap: .4rem; text-decoration: none; }
+.footer-contact a:hover { color: var(--lapis); }
 
 /* ---------- Cards & layout ---------- */
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; box-shadow: var(--shadow); }

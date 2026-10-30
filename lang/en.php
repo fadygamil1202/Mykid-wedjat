@@ -388,4 +388,5 @@ return [
     'admin.email_unverified' => 'Email not confirmed',
     'admin.verify_btn' => 'Mark as confirmed',
     'admin.verify_confirm' => 'Mark this email address as confirmed?',
+    'footer.contact' => 'Contact us',
 ];

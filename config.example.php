@@ -61,7 +61,10 @@ return [
 
     // Support contact shown on the site
     'support_phone' => '+201279792658',
-    'support_email' => 'support@example.com',
+    'support_email' => 'support@mykidwedjat.com',
+    // Shown in the site footer (the Arabic one when the site is in Arabic)
+    'support_address_en' => '6th of October City, Giza, Egypt',
+    'support_address_ar' => 'مدينة 6 أكتوبر، الجيزة، مصر',
 
     // Email: account confirmation, password reset and notifications.
     // Hostinger: create the mailbox in hPanel > Emails, then use smtp.hostinger.com, port 465, 'ssl',
