@@ -201,6 +201,10 @@ function subscription_start(): void
     $planId = input_int('plan_id');
     $plan = $planId ? q_one('SELECT * FROM plans WHERE id=? AND is_active=1', [$planId]) : null;
     if (!$plan) abort(400);
+    if (!plan_payable_alone($plan)) {
+        flash('info', online_gateway() ? t('plans.with_device') : t('online.unavailable'));
+        redirect(cart_plan() ? 'cart' : 'subscription');
+    }
 
     // One open payment at a time: reuse it if the parent picks the same plan again
     $pending = q_one("SELECT pay.*, s.plan_id FROM payments pay JOIN subscriptions s ON s.id=pay.ref_id

@@ -29,7 +29,7 @@ Without an active subscription (or before the parent ticks the consent box), the
 
 ## Online payments (XPay or Paymob)
 
-"Pay online" on the payment page uses the gateway chosen in `config.php` (`'online_gateway' => 'xpay'` or `'paymob'`). Both charge the exact amount after promo codes, and both end in `payment_mark_paid()`, which activates the subscription or order. Manual transfer (an admin confirms it) can stay available next to it with `payment.manual`. The shared code is in `src/online.php`.
+"Pay online" on the payment page uses the gateway chosen in `config.php` (`'online_gateway' => 'xpay'` or `'paymob'`). Both charge the exact amount after promo codes, and both end in `payment_mark_paid()`, which activates the subscription or order. Payments are **online only**: parents never see transfer instructions. An admin can still mark a payment as paid by hand (Admin → Payments) for exceptional cases. A plan cheaper than the gateway's minimum (XPay: 50 EGP) can't be bought on its own; it is offered as "Add to cart" together with a device order. If no gateway is enabled, the payment page asks parents to contact support. The shared code is in `src/online.php`.
 
 ### XPay (Hosted Checkout), `src/xpay.php`
 1. **Pay online** creates a Checkout Session (`POST /checkout/sessions`) and sends the parent to XPay's hosted page.

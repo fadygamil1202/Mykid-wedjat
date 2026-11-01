@@ -23,13 +23,10 @@ return [
     'shipping_fee'    => 50,     // flat fee per order
     'replacement_fee' => 0,      // charged when a parent asks for a new device (0 = free)
 
-    // Manual transfer: parents see these instructions and an admin marks the payment
-    // as paid from Admin > Payments. Shown alone when no online gateway is enabled.
+    // Payments are online only (see online_gateway below). 'provider' is the label a payment
+    // gets until the gateway confirms it. Admins can still mark a payment as paid by hand.
     'payment' => [
         'provider' => 'manual',
-        'manual'   => true,   // also show these transfer instructions next to the online payment button
-        'instructions_en' => 'Send the amount by InstaPay or Vodafone Cash to 01000000000 and write your payment number in the note. We activate it within 24 hours.',
-        'instructions_ar' => 'حوّل المبلغ عن طريق InstaPay أو فودافون كاش على الرقم 01000000000 واكتب رقم الدفع في الملاحظة. سيتم التفعيل خلال ٢٤ ساعة.',
     ],
 
     // Which gateway "Pay online" uses: 'xpay' or 'paymob'. Its block below must be filled in and enabled.
