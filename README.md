@@ -130,3 +130,18 @@ Set up the `mail` block in `config.php` (Hostinger: create the mailbox in **hPan
 - Links are random one-time tokens. Only their SHA-256 hash is stored (`email_tokens`).
 
 **Existing database:** run `database/migrations/003_email_verification.sql` once in phpMyAdmin before uploading the new files. It marks everyone who already registered as confirmed, so nobody is locked out.
+
+## Stock
+
+Each product can track its stock (**Admin → Products → product → Stock**). Untracked products are unlimited.
+
+- **Customers** see "Only N left" at `stock.low_threshold` (5) or fewer, and "Out of stock" with no Add-to-cart at 0. The cart can't ask for more than is available, and it blocks checkout if something ran out meanwhile.
+- **Checkout reserves the units** in the same database transaction as the order, locking the product row, so two buyers can never get the same last unit.
+- **Paid:** the reservation becomes a sale.
+- **Declined, cancelled before shipping, or not paid in time:** the units come back.
+- **Unpaid orders expire** after `stock.hold_minutes` (15). Pressing "Pay online" restarts the timer. A payment that finishes later (Fawry at an outlet, pending wallet) holds the units for `stock.async_hold_hours` (48). Expired orders are cleaned up whenever the shop, cart, checkout or admin pages load, so no cron job is needed.
+- **Paid after expiring:** the order is revived if the units are still there. Otherwise admins get a "refund needed" alert.
+- **Replacement devices** take one unit of the first product of that type. Issuing one is refused when it's out of stock.
+- **Admins** add or remove units with a reason and a note. Every change is in the product's **stock history**. The dashboard and notifications warn when a product runs low or out.
+
+**Existing database:** run `database/migrations/004_stock.sql` once in phpMyAdmin before uploading the new files. Existing products start untracked (unlimited); turn tracking on per product and enter the quantity you have.

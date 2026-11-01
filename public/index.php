@@ -110,6 +110,7 @@ $routes = [
     ['POST', '#^/admin/products$#',                   'admin_product_create'],
     ['GET',  '#^/admin/products/(\d+)$#',             'admin_product_edit'],
     ['POST', '#^/admin/products/(\d+)$#',             'admin_product_update'],
+    ['POST', '#^/admin/products/(\d+)/stock$#',       'admin_product_stock'],
     ['GET',  '#^/admin/promos$#',                     'admin_promos'],
     ['POST', '#^/admin/promos$#',                     'admin_promo_create'],
     ['GET',  '#^/admin/promos/(\d+)$#',               'admin_promo_edit'],

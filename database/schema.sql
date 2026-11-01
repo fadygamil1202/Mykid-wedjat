@@ -79,6 +79,7 @@ CREATE TABLE products (
   description_en TEXT NULL,
   description_ar TEXT NULL,
   price DECIMAL(10,2) NOT NULL,
+  stock INT NULL,               -- NULL = not tracked (unlimited); a number = units available to sell
   image VARCHAR(255) NULL,      -- path under public/, e.g. assets/products/card.svg or uploads/abc.jpg
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   sort_order INT NOT NULL DEFAULT 0
@@ -115,6 +116,8 @@ CREATE TABLE orders (
   plan_id INT UNSIGNED NULL,          -- subscription bought together with the products
   subscription_id INT UNSIGNED NULL,
   status ENUM('pending_payment','paid','processing','shipped','delivered','cancelled') NOT NULL DEFAULT 'pending_payment',
+  stock_reserved TINYINT(1) NOT NULL DEFAULT 0,   -- 1 while the order holds its units
+  reserved_until DATETIME NULL,                   -- unpaid orders are cancelled after this
   subtotal DECIMAL(10,2) NOT NULL,    -- products only
   plan_price DECIMAL(10,2) NOT NULL DEFAULT 0,
   shipping_fee DECIMAL(10,2) NOT NULL DEFAULT 0,
@@ -130,6 +133,7 @@ CREATE TABLE orders (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (plan_id) REFERENCES plans(id),
+  INDEX idx_reservation (status, stock_reserved, reserved_until),
   FOREIGN KEY (subscription_id) REFERENCES subscriptions(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -196,6 +200,25 @@ CREATE TABLE promo_codes (
   ends_at DATETIME NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Every change to a product's stock, with the reason (audit trail).
+CREATE TABLE stock_movements (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  product_id INT UNSIGNED NOT NULL,
+  change_qty INT NOT NULL,                 -- negative = out, positive = in
+  stock_after INT NOT NULL,
+  reason ENUM('order','order_released','replacement','received','correction') NOT NULL,
+  order_id INT UNSIGNED NULL,
+  tag_request_id INT UNSIGNED NULL,
+  user_id INT UNSIGNED NULL,               -- admin who made a manual change
+  note VARCHAR(190) NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_product_time (product_id, created_at),
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL,
+  FOREIGN KEY (tag_request_id) REFERENCES tag_requests(id) ON DELETE SET NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Every charge goes through here. kind + ref_id point at the subscription,

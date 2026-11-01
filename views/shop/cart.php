@@ -16,7 +16,8 @@
           <span class="row" style="flex-wrap:nowrap">
             <img src="/<?= e($l['product']['image']) ?>" alt="" width="64" height="48" style="border-radius:10px;object-fit:cover">
             <span><strong><?= e(loc($l['product'], 'name')) ?></strong> × <?= e($l['qty']) ?><br>
-              <span class="muted small"><?= e(t('cart.for', ['name' => $l['child']['first_name']])) ?></span></span>
+              <span class="muted small"><?= e(t('cart.for', ['name' => $l['child']['first_name']])) ?></span>
+              <?php if ($l['short']): ?><br><span class="badge badge-locked"><?= e($l['available'] > 0 ? t('stock.only_n', ['n' => $l['available']]) : t('stock.out')) ?></span><?php endif; ?></span>
           </span>
           <span class="row">
             <strong><?= e(money($l['total'])) ?></strong>
@@ -32,7 +33,9 @@
   </section>
   <section class="card col-side">
     <?php require BASE_PATH . '/views/shop/_totals.php'; ?>
-    <?php if ($lines): ?>
+    <?php if ($lines && array_filter(array_column($lines, 'short'))): ?>
+      <p class="hint warn"><?= icon('alert') ?> <?= e(t('stock.cart_fix')) ?></p>
+    <?php elseif ($lines): ?>
       <a class="btn btn-primary btn-block" href="/checkout"><?= e(t('cart.checkout')) ?></a>
       <?php if ($plan): ?><p class="hint center" style="margin-top:.5rem"><?= e(t('cart.one_payment')) ?></p><?php endif; ?>
     <?php else: ?>

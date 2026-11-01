@@ -300,7 +300,15 @@ function cart_lines(array $user): array
             unset($_SESSION['cart'][$key]);
             continue;
         }
-        $lines[$key] = ['product' => $p, 'child' => $c, 'qty' => (int)$item['qty'], 'total' => $p['price'] * $item['qty']];
+        $lines[$key] = ['product' => $p, 'child' => $c, 'qty' => (int)$item['qty'], 'total' => $p['price'] * $item['qty'], 'short' => false];
+    }
+    // Mark lines that ask for more than is in stock (one product can be in the cart for several children)
+    $wanted = [];
+    foreach ($lines as $l) $wanted[$l['product']['id']] = ($wanted[$l['product']['id']] ?? 0) + $l['qty'];
+    foreach ($lines as &$l) {
+        $available = product_available($l['product']);
+        $l['available'] = $available;
+        $l['short'] = $available !== null && $wanted[$l['product']['id']] > $available;
     }
     return $lines;
 }

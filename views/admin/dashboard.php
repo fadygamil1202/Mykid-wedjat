@@ -5,6 +5,7 @@
   <a class="<?= $todo['orders'] ? 'hot' : '' ?>" href="/admin/orders?status=paid"><span class="n"><?= (int)$todo['orders'] ?></span> <?= e(t('admin.todo_orders')) ?></a>
   <a class="<?= $todo['requests'] ? 'hot' : '' ?>" href="/admin/requests"><span class="n"><?= (int)$todo['requests'] ?></span> <?= e(t('admin.todo_requests')) ?></a>
   <a href="/admin/subscriptions"><span class="n"><?= (int)$todo['expiring'] ?></span> <?= e(t('admin.todo_expiring')) ?></a>
+  <a class="<?= $todo['stock'] ? 'hot' : '' ?>" href="/admin/products"><span class="n"><?= (int)$todo['stock'] ?></span> <?= e(t('admin.todo_stock')) ?></a>
 </div>
 
 <div class="stats">

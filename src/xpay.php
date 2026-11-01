@@ -104,6 +104,10 @@ function xpay_apply_session(array $session): ?int
         error_log('XPay: session ' . ($session['id'] ?? '?') . ' does not match any payment');
         return null;
     }
+    if (($session['status'] ?? '') === 'complete' && ($session['paymentStatus'] ?? '') !== 'paid') {
+        // e.g. Fawry: the parent pays at an outlet later, so keep the order's units meanwhile
+        payment_extend_hold($pay, 3600 * (int)config('stock.async_hold_hours', 48));
+    }
     if (($session['paymentStatus'] ?? '') === 'paid') {
         $cents = (int)round((float)$pay['amount'] * 100);
         if ((int)($session['amountTotal'] ?? -1) !== $cents || strtoupper((string)($session['currency'] ?? '')) !== strtoupper($pay['currency'])) {
