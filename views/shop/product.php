@@ -13,7 +13,13 @@
       <li><?= icon('box') ?> <?= e(t('shop.f_ship')) ?></li>
     </ul>
     <hr class="divider">
-    <?php if (!$user): ?>
+    <?php $avail = product_available($p); ?>
+    <?php if ($avail !== null && $avail > 0 && $avail <= low_stock_threshold()): ?>
+      <p class="hint warn"><?= icon('alert') ?> <?= e(t('stock.only_n', ['n' => $avail])) ?></p>
+    <?php endif; ?>
+    <?php if ($avail === 0): ?>
+      <div class="flash flash-error" style="margin:0"><?= icon('x') ?> <?= e(t('stock.out_long')) ?></div>
+    <?php elseif (!$user): ?>
       <a class="btn btn-primary btn-block" href="/register"><?= e(t('shop.signup_to_buy')) ?></a>
       <p class="center small" style="margin-top:.5rem"><a href="/login"><?= e(t('register.have_account')) ?> <?= e(t('nav.login')) ?></a></p>
     <?php elseif ($user['role'] !== 'parent'): ?>
@@ -32,7 +38,7 @@
           <span class="hint"><?= e(t('shop.for_child_hint')) ?></span>
         </label>
         <label class="qty"><?= e(t('field.qty')) ?>
-          <select name="qty"><?php for ($i = 1; $i <= 5; $i++): ?><option><?= $i ?></option><?php endfor; ?></select>
+          <select name="qty"><?php for ($i = 1; $i <= min(5, $avail ?? 5); $i++): ?><option><?= $i ?></option><?php endfor; ?></select>
         </label>
         <button class="btn btn-primary btn-block" type="submit"><?= icon('cart') ?> <?= e(t('shop.add_to_cart')) ?></button>
       </form>

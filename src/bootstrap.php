@@ -51,6 +51,7 @@ require __DIR__ . '/mailer.php';
 require __DIR__ . '/auth.php';
 require __DIR__ . '/access.php';
 require __DIR__ . '/billing.php';
+require __DIR__ . '/stock.php';
 require __DIR__ . '/paymob.php';
 require __DIR__ . '/xpay.php';
 require __DIR__ . '/online.php';

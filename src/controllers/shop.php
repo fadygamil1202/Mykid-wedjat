@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 function shop_index(): void
 {
+    stock_release_expired();
     view('shop/index', [
         'title'    => t('nav.shop'),
         'products' => q_all('SELECT * FROM products WHERE is_active=1 ORDER BY sort_order, id'),
@@ -13,6 +14,7 @@ function shop_index(): void
 
 function shop_product(string $slug): void
 {
+    stock_release_expired();
     $product = q_one('SELECT * FROM products WHERE slug=? AND is_active=1', [$slug]);
     if (!$product) abort(404);
     $user = current_user();
@@ -26,6 +28,7 @@ function shop_product(string $slug): void
 function cart_show(): void
 {
     $user = require_parent();
+    stock_release_expired();
     $lines = cart_lines($user);
     $plan = cart_plan();
     view('shop/cart', [
@@ -70,6 +73,16 @@ function cart_add(): void
     }
     $key = substr(md5($productId . ':' . $childId), 0, 8);
     $current = $_SESSION['cart'][$key]['qty'] ?? 0;
+    $available = product_available($product);
+    if ($available !== null) {
+        $inCart = array_sum(array_map(fn($i) => (int)$i['product_id'] === $productId ? (int)$i['qty'] : 0, cart()));
+        if ($inCart + $qty > $available) {
+            flash('error', $available - $inCart > 0
+                ? t('stock.only_n', ['n' => $available - $inCart])
+                : t('stock.out'));
+            redirect('shop/' . $product['slug']);
+        }
+    }
     $_SESSION['cart'][$key] = ['product_id' => $productId, 'child_id' => $childId, 'qty' => min(5, $current + $qty)];
     flash('success', t('cart.added'));
     redirect('cart');
@@ -87,8 +100,10 @@ function cart_remove(string $key): void
 function checkout_form(): void
 {
     $user = require_parent();
+    stock_release_expired();
     $lines = cart_lines($user);
     if (!$lines) redirect('cart'); // a subscription on its own is paid from the cart, no address needed
+    if (array_filter(array_column($lines, 'short'))) redirect('cart'); // the cart explains what ran out
     $plan = cart_plan();
     $last = q_one('SELECT * FROM orders WHERE user_id=? ORDER BY id DESC LIMIT 1', [$user['id']]);
     view('shop/checkout', [
@@ -103,8 +118,10 @@ function checkout_form(): void
 function checkout_submit(): void
 {
     $user = require_parent();
+    stock_release_expired();
     $lines = cart_lines($user);
     if (!$lines) redirect('cart');
+    if (array_filter(array_column($lines, 'short'))) redirect('cart');
 
     $ship = [
         'name' => input('ship_name'), 'phone' => input('ship_phone'), 'governorate' => input('ship_governorate'),
@@ -138,6 +155,12 @@ function checkout_submit(): void
     foreach ($lines as $line) {
         q('INSERT INTO order_items (order_id, product_id, child_id, qty, unit_price) VALUES (?,?,?,?,?)',
           [$orderId, $line['product']['id'], $line['child']['id'], $line['qty'], $line['product']['price']]);
+    }
+    // Reserve the units now; if someone just bought the last one, nothing is saved
+    if ($missing = order_reserve_stock($orderId)) {
+        $pdo->rollBack();
+        flash('error', t('stock.ran_out', ['product' => loc($missing, 'name')]));
+        redirect('cart');
     }
     $paymentId = payment_create((int)$user['id'], 'order', $orderId, $subtotal + $planPrice + $shipping);
     $pdo->commit();

@@ -177,6 +177,9 @@ function paymob_apply_transaction(array $txn, ?string $reference): ?int
     } elseif (!$bool($txn['pending'] ?? false)) {
         error_log("Paymob: MKW-{$paymentId} declined: " . paymob_str(paymob_get($txn, 'data.message') ?? ($txn['data.message'] ?? ''))
             . ' (code ' . paymob_str(paymob_get($txn, 'data.txn_response_code') ?? ($txn['txn_response_code'] ?? '')) . ', integration ' . paymob_str($txn['integration_id'] ?? '') . ')');
+    } else {
+        // Still pending (e.g. a wallet or kiosk payment finishing later): keep the order's units meanwhile
+        payment_extend_hold($pay, 3600 * (int)config('stock.async_hold_hours', 48));
     }
     // A declined card leaves the payment waiting, so the parent can try again
     return $paymentId;

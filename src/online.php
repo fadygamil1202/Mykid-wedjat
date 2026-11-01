@@ -57,6 +57,7 @@ function payment_online_start(int $id): void
         flash('error', t('online.start_failed') . (config('debug', false) ? ' — ' . $ex->getMessage() : ''));
         redirect("payments/{$id}");
     }
+    payment_extend_hold($payment, 60 * (int)config('stock.hold_minutes', 15)); // the units stay held while paying
     $_SESSION['online_payment'] = $id; // to find the payment again when the browser comes back
     $_SESSION['online_url'] = $url;
     // Go through our own page instead of redirecting the form off-site: browsers block a form

@@ -19,6 +19,11 @@ return [
     ],
 
     // Shop
+    'stock' => [
+        'hold_minutes'     => 15,   // unpaid orders give their units back after this (restarts on "Pay online")
+        'async_hold_hours' => 48,   // payments finished later (e.g. Fawry at an outlet) keep the units this long
+        'low_threshold'    => 5,    // "Only N left" for customers, and a low-stock alert for admins
+    ],
     'currency'        => 'EGP',
     'shipping_fee'    => 50,     // flat fee per order
     'replacement_fee' => 0,      // charged when a parent asks for a new device (0 = free)

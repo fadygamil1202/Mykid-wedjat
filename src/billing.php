@@ -117,13 +117,28 @@ function payment_mark_paid(int $paymentId, ?string $providerRef = null): bool
             subscription_activate((int)$pay['ref_id']);
             notify((int)$pay['user_id'], 'notify.sub_active');
         } elseif ($pay['kind'] === 'order') {
-            q("UPDATE orders SET status = 'paid' WHERE id = ? AND status = 'pending_payment'", [$pay['ref_id']]);
-            notify((int)$pay['user_id'], 'notify.order_paid', ['id' => $pay['ref_id']]);
-            // A subscription bought in the same order starts now
-            $subId = q_one('SELECT subscription_id FROM orders WHERE id = ?', [$pay['ref_id']])['subscription_id'] ?? null;
-            if ($subId) {
-                subscription_activate((int)$subId);
-                notify((int)$pay['user_id'], 'notify.sub_active');
+            $order = q_one('SELECT * FROM orders WHERE id = ? FOR UPDATE', [$pay['ref_id']]);
+            $ok = true;
+            if ($order && $order['status'] === 'cancelled' && !$order['stock_reserved']) {
+                // Paid after the order had expired (e.g. a late Fawry payment): take the units again if they're there
+                $missing = order_reserve_stock((int)$order['id']);
+                if ($missing) {
+                    $ok = false;
+                    notify_admins('notify.admin_paid_no_stock', ['id' => $order['id'], 'product' => $missing['name_en']]);
+                } else {
+                    q("UPDATE orders SET status = 'pending_payment' WHERE id = ?", [$order['id']]);
+                }
+            }
+            if ($ok) {
+                // The reservation is now a sale: it no longer expires
+                q("UPDATE orders SET status = 'paid', reserved_until = NULL WHERE id = ? AND status = 'pending_payment'", [$pay['ref_id']]);
+                notify((int)$pay['user_id'], 'notify.order_paid', ['id' => $pay['ref_id']]);
+                // A subscription bought in the same order starts now
+                $subId = $order['subscription_id'] ?? null;
+                if ($subId) {
+                    subscription_activate((int)$subId);
+                    notify((int)$pay['user_id'], 'notify.sub_active');
+                }
             }
         }
         $pdo->commit();
@@ -139,7 +154,7 @@ function payment_mark_paid(int $paymentId, ?string $providerRef = null): bool
  * what it was for: the subscription, the order (unless already shipped) or the
  * replacement request. The parent is notified.
  */
-function payment_mark_unpaid(int $paymentId, string $status): bool
+function payment_mark_unpaid(int $paymentId, string $status, ?string $notifyKey = null): bool
 {
     $pay = q_one('SELECT * FROM payments WHERE id = ?', [$paymentId]);
     if (!$pay) return false;
@@ -152,11 +167,15 @@ function payment_mark_unpaid(int $paymentId, string $status): bool
     } elseif ($pay['kind'] === 'order') {
         q("UPDATE orders SET status = 'cancelled' WHERE id = ? AND status IN ('pending_payment','paid','processing')", [$pay['ref_id']]);
         q("UPDATE subscriptions s JOIN orders o ON o.subscription_id = s.id SET s.status = 'cancelled' WHERE o.id = ?", [$pay['ref_id']]);
+        // Nothing was shipped, so the units go back on sale (a shipped order keeps them)
+        if ((q_one('SELECT status FROM orders WHERE id = ?', [$pay['ref_id']])['status'] ?? '') === 'cancelled') {
+            order_release_stock((int)$pay['ref_id']);
+        }
     } else {
         q("UPDATE tag_requests SET status = 'rejected', handled_at = NOW() WHERE id = ? AND status = 'pending'", [$pay['ref_id']]);
     }
-    notify((int)$pay['user_id'], $status === 'failed' ? 'notify.payment_failed' : 'notify.payment_refunded',
-           ['ref' => 'MKW-' . $paymentId, 'kind' => '@pay.kind.' . $pay['kind']]);
+    notify((int)$pay['user_id'], $notifyKey ?? ($status === 'failed' ? 'notify.payment_failed' : 'notify.payment_refunded'),
+           ['ref' => 'MKW-' . $paymentId, 'kind' => '@pay.kind.' . $pay['kind'], 'id' => $pay['ref_id']]);
     return true;
 }
 

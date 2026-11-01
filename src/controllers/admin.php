@@ -4,6 +4,7 @@ declare(strict_types=1);
 function admin_dashboard(): void
 {
     require_admin();
+    stock_release_expired();
     $n = fn(string $sql) => (float)(q_one($sql)['n'] ?? 0);
     view('admin/dashboard', [
         'title' => t('admin.dashboard'),
@@ -22,6 +23,7 @@ function admin_dashboard(): void
             'orders'   => $n("SELECT COUNT(*) n FROM orders WHERE status IN ('paid','processing')"),
             'requests' => $n("SELECT COUNT(*) n FROM tag_requests WHERE status='pending'"),
             'expiring' => $n("SELECT COUNT(*) n FROM subscriptions WHERE status='active' AND ends_at BETWEEN NOW() AND NOW() + INTERVAL 7 DAY"),
+            'stock'    => $n('SELECT COUNT(*) n FROM products WHERE is_active=1 AND stock IS NOT NULL AND stock <= ' . low_stock_threshold()),
         ],
         'monthly' => q_all("SELECT DATE_FORMAT(paid_at, '%Y-%m') m, SUM(amount) total FROM payments
                             WHERE status='paid' AND paid_at >= DATE_FORMAT(NOW() - INTERVAL 5 MONTH, '%Y-%m-01')
@@ -225,6 +227,9 @@ function admin_order_status(int $id): void
     $status = input('status');
     if (!$order || !in_array($status, ORDER_STATUSES, true)) abort(400);
     q('UPDATE orders SET status=? WHERE id=?', [$status, $id]);
+    if ($status === 'cancelled' && in_array($order['status'], ['pending_payment', 'paid', 'processing'], true)) {
+        order_release_stock($id);
+    }
     if ($status === 'cancelled' && $order['subscription_id']) {
         q("UPDATE subscriptions SET status='cancelled' WHERE id=? AND status='pending'", [$order['subscription_id']]);
     }
@@ -315,6 +320,17 @@ function admin_request_handle(int $id, string $action): void
                   JOIN children c ON c.id=t.child_id WHERE r.id=? AND r.status='pending'", [$id]);
     if (!$req) abort(404);
     if ($action === 'complete') {
+        // The new device comes out of stock (the first product of that type)
+        $product = product_for_type($req['type']);
+        if ($product) {
+            db()->beginTransaction();
+            if (!stock_take((int)$product['id'], 1, 'replacement', ['tag_request_id' => $id, 'user_id' => $admin['id']])) {
+                db()->rollBack();
+                flash('error', t('stock.replacement_out', ['product' => loc($product, 'name')]));
+                redirect('admin/requests');
+            }
+            db()->commit();
+        }
         $newTag = tag_create((int)$req['child_id'], $req['type'], null, (int)$req['tag_id']);
         q("UPDATE tags SET status='replaced' WHERE id=?", [$req['tag_id']]);
         q("UPDATE tag_requests SET status='completed', new_tag_id=?, handled_by=?, handled_at=NOW() WHERE id=?",
@@ -334,7 +350,11 @@ function admin_request_handle(int $id, string $action): void
 function admin_products(): void
 {
     require_admin();
-    view('admin/products', ['title' => t('admin.products'), 'products' => q_all('SELECT * FROM products ORDER BY sort_order, id')]);
+    stock_release_expired();
+    view('admin/products', ['title' => t('admin.products'), 'products' => q_all(
+        "SELECT p.*, (SELECT COALESCE(SUM(i.qty),0) FROM order_items i JOIN orders o ON o.id=i.order_id
+                      WHERE i.product_id=p.id AND o.status='pending_payment' AND o.stock_reserved=1) AS held
+         FROM products p ORDER BY p.sort_order, p.id")]);
 }
 
 function admin_product_new(): void
@@ -352,6 +372,9 @@ function product_input(): ?array
         'price' => filter_var(input('price'), FILTER_VALIDATE_FLOAT),
         'is_active' => isset($_POST['is_active']) ? 1 : 0, 'sort_order' => (int)input('sort_order', '0'),
     ];
+    $initial = filter_var(input('stock', '0'), FILTER_VALIDATE_INT);
+    $d['_track'] = isset($_POST['track_stock']);
+    $d['_initial'] = $initial === false ? 0 : max(0, $initial);
     if (!preg_match('/^[a-z0-9-]{2,80}$/', $d['slug']) || !in_array($d['type'], TAG_TYPES, true)
         || $d['name_en'] === '' || $d['name_ar'] === '' || $d['price'] === false || $d['price'] < 0) {
         flash('error', t('admin.product_invalid'));
@@ -370,7 +393,13 @@ function admin_product_create(): void
         redirect('admin/products/new');
     }
     $d['image'] = save_upload('image') ?? 'assets/products/' . $d['type'] . '.svg';
+    [$track, $initial] = [$d['_track'], $d['_initial']];
+    unset($d['_track'], $d['_initial']);
+    $d['stock'] = $track ? $initial : null;
     q('INSERT INTO products (' . implode(',', array_keys($d)) . ') VALUES (' . rtrim(str_repeat('?,', count($d)), ',') . ')', array_values($d));
+    if ($track && $initial > 0) {
+        stock_log((int)db()->lastInsertId(), $initial, $initial, 'received', ['user_id' => current_user()['id'], 'note' => t('stock.initial')]);
+    }
     flash('success', t('saved'));
     redirect('admin/products');
 }
@@ -380,7 +409,13 @@ function admin_product_edit(int $id): void
     require_admin();
     $product = q_one('SELECT * FROM products WHERE id=?', [$id]);
     if (!$product) abort(404);
-    view('admin/product_form', ['title' => t('admin.product_edit'), 'product' => $product]);
+    view('admin/product_form', [
+        'title' => t('admin.product_edit'), 'product' => $product,
+        'movements' => q_all('SELECT m.*, u.name admin_name FROM stock_movements m LEFT JOIN users u ON u.id=m.user_id
+                              WHERE m.product_id=? ORDER BY m.id DESC LIMIT 50', [$id]),
+        'held' => (int)q_one("SELECT COALESCE(SUM(i.qty),0) n FROM order_items i JOIN orders o ON o.id=i.order_id
+                              WHERE i.product_id=? AND o.status='pending_payment' AND o.stock_reserved=1", [$id])['n'],
+    ]);
 }
 
 function admin_product_update(int $id): void
@@ -398,10 +433,46 @@ function admin_product_update(int $id): void
         if (str_starts_with((string)$product['image'], 'uploads/')) @unlink(BASE_PATH . '/public/' . $product['image']);
         $d['image'] = $img;
     }
+    [$track, $initial] = [$d['_track'], $d['_initial']];
+    unset($d['_track'], $d['_initial']);
     $set = implode(',', array_map(fn($k) => "$k=?", array_keys($d)));
     q("UPDATE products SET {$set} WHERE id=?", [...array_values($d), $id]);
+    // Turning tracking on starts from the given quantity; turning it off makes the product unlimited
+    if ($track && $product['stock'] === null) {
+        q('UPDATE products SET stock = ? WHERE id = ?', [$initial, $id]);
+        if ($initial > 0) stock_log($id, $initial, $initial, 'received', ['user_id' => current_user()['id'], 'note' => t('stock.initial')]);
+    } elseif (!$track && $product['stock'] !== null) {
+        q('UPDATE products SET stock = NULL WHERE id = ?', [$id]);
+    }
     flash('success', t('saved'));
-    redirect('admin/products');
+    redirect("admin/products/{$id}");
+}
+
+/** POST /admin/products/{id}/stock: units received (+) or removed (−, e.g. damaged or counted wrong). */
+function admin_product_stock(int $id): void
+{
+    $admin = require_admin();
+    $qty = filter_var(input('qty'), FILTER_VALIDATE_INT);
+    $reason = input('reason') === 'correction' ? 'correction' : 'received';
+    $product = q_one('SELECT * FROM products WHERE id=?', [$id]);
+    if (!$product || $product['stock'] === null) abort(404);
+    if ($qty === false || $qty === 0) {
+        flash('error', t('stock.bad_qty'));
+        redirect("admin/products/{$id}");
+    }
+    db()->beginTransaction();
+    $extra = ['user_id' => $admin['id'], 'note' => input('note')];
+    $ok = true;
+    if ($qty > 0) stock_put($id, $qty, $reason, $extra);
+    else $ok = stock_take($id, -$qty, $reason, $extra); // can't go below zero
+    if (!$ok) {
+        db()->rollBack();
+        flash('error', t('stock.not_enough'));
+        redirect("admin/products/{$id}");
+    }
+    db()->commit();
+    flash('success', t('saved'));
+    redirect("admin/products/{$id}");
 }
 
 function admin_plans(): void
