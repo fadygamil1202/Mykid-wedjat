@@ -177,7 +177,6 @@ return [
     // Payments
     'pay.title' => 'Payment', 'pay.for' => 'For', 'pay.amount' => 'Amount', 'pay.ref' => 'Payment number',
     'pay.for_plan' => ':plan subscription', 'pay.for_replacement' => 'Replacement device',
-    'pay.how' => 'How to pay', 'pay.use_ref' => 'Payment number: :ref', 'pay.online_soon' => 'Card and wallet payment online is coming soon.',
     'pay.thanks' => 'Payment received. Thank you!', 'pay.support' => 'Call support',
     'pay.status.pending' => 'Waiting', 'pay.status.paid' => 'Paid', 'pay.status.failed' => 'Failed', 'pay.status.refunded' => 'Refunded',
     'pay.kind.subscription' => 'Subscription', 'pay.kind.order' => 'Order', 'pay.kind.replacement' => 'Replacement',
@@ -212,7 +211,7 @@ return [
     'admin.mark_paid' => 'Mark paid', 'admin.mark_failed' => 'Mark failed', 'admin.mark_refunded' => 'Mark refunded',
     'admin.confirm_paid' => 'Confirm that this money was received? This activates the subscription or order.',
     'admin.confirm_failed' => 'Mark this payment as failed?', 'admin.confirm_refund' => 'Mark this payment as refunded?',
-    'admin.transfer_ref' => 'Transfer ref (optional)',
+    'admin.transfer_ref' => 'Reference (optional)',
     'admin.parents' => 'Parents', 'admin.admins' => 'Admins', 'admin.search_users' => 'Name, email or phone',
     'admin.disabled' => 'Disabled', 'admin.disable' => 'Disable account', 'admin.enable' => 'Enable account',
     'admin.toggle_confirm' => 'Change this account\'s access?', 'admin.cant_disable_self' => 'You cannot disable your own account.',
@@ -334,15 +333,14 @@ return [
     // Online payment (Paymob / XPay)
     'online.pay' => 'Pay :amount online',
     'online.methods' => 'Card and other payment methods, secured by :name',
-    'online.or_manual' => 'Or pay by transfer',
-    'online.start_failed' => 'Online payment is not available right now. Please try again in a few minutes or pay by transfer.',
+    'online.start_failed' => 'Online payment is not available right now. Please try again in a few minutes or contact support.',
     'online.confirming' => 'Payment received. We are confirming it, this page will update in a moment.',
     'online.declined' => 'The payment did not go through. You can try again with another card or wallet.',
     'online.redirect_title' => 'Taking you to :name…',
     'online.redirect_text' => 'You will pay securely on :name, then come back here automatically.',
     'online.redirect_btn' => 'Continue to payment',
     'online.reason' => 'The bank said: :reason.',
-    'online.below_min' => 'Online payment with :name starts from :min. Please pay this amount by transfer below, or choose the yearly plan / add it to a shop order to pay online.',
+    'online.below_min' => 'Online payments start from :min, so this amount cannot be paid on its own. Add it to a device order, or choose the yearly plan.',
 
     // Card without subscription
     'public.inactive_label' => 'CARD NOT ACTIVE',
@@ -389,4 +387,6 @@ return [
     'admin.verify_btn' => 'Mark as confirmed',
     'admin.verify_confirm' => 'Mark this email address as confirmed?',
     'footer.contact' => 'Contact us',
+    'online.unavailable' => 'Online payment is not available right now. Please try again later or contact support.',
+    'plans.with_device' => 'Available together with a card, bracelet or necklace order (online payments start from 50 EGP).',
 ];

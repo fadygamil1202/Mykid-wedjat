@@ -177,7 +177,6 @@ return [
     // Payments
     'pay.title' => 'الدفع', 'pay.for' => 'مقابل', 'pay.amount' => 'المبلغ', 'pay.ref' => 'رقم الدفع',
     'pay.for_plan' => 'اشتراك :plan', 'pay.for_replacement' => 'جهاز بديل',
-    'pay.how' => 'طريقة الدفع', 'pay.use_ref' => 'رقم الدفع: :ref', 'pay.online_soon' => 'الدفع أونلاين بالكارت والمحافظ قريبًا.',
     'pay.thanks' => 'تم استلام الدفع. شكرًا!', 'pay.support' => 'اتصل بالدعم',
     'pay.status.pending' => 'في الانتظار', 'pay.status.paid' => 'مدفوع', 'pay.status.failed' => 'فشل', 'pay.status.refunded' => 'مسترد',
     'pay.kind.subscription' => 'اشتراك', 'pay.kind.order' => 'طلب', 'pay.kind.replacement' => 'استبدال',
@@ -212,7 +211,7 @@ return [
     'admin.mark_paid' => 'تأكيد الدفع', 'admin.mark_failed' => 'فشل الدفع', 'admin.mark_refunded' => 'تم الاسترداد',
     'admin.confirm_paid' => 'تأكيد استلام المبلغ؟ هذا يفعّل الاشتراك أو الطلب.',
     'admin.confirm_failed' => 'تسجيل الدفع كفاشل؟', 'admin.confirm_refund' => 'تسجيل الدفع كمسترد؟',
-    'admin.transfer_ref' => 'مرجع التحويل (اختياري)',
+    'admin.transfer_ref' => 'رقم مرجعي (اختياري)',
     'admin.parents' => 'أولياء الأمور', 'admin.admins' => 'المديرين', 'admin.search_users' => 'الاسم أو البريد أو الموبايل',
     'admin.disabled' => 'موقوف', 'admin.disable' => 'إيقاف الحساب', 'admin.enable' => 'تفعيل الحساب',
     'admin.toggle_confirm' => 'تغيير صلاحية هذا الحساب؟', 'admin.cant_disable_self' => 'لا يمكنك إيقاف حسابك.',
@@ -334,15 +333,14 @@ return [
     // Online payment (Paymob / XPay)
     'online.pay' => 'ادفع :amount أونلاين',
     'online.methods' => 'كارت ووسائل دفع أخرى، مؤمّن بواسطة :name',
-    'online.or_manual' => 'أو ادفع بالتحويل',
-    'online.start_failed' => 'الدفع أونلاين غير متاح حاليًا. حاول بعد دقايق أو ادفع بالتحويل.',
+    'online.start_failed' => 'الدفع أونلاين غير متاح حاليًا. حاول بعد دقايق أو تواصل مع الدعم.',
     'online.confirming' => 'تم استلام الدفع وجاري تأكيده، الصفحة هتتحدث خلال لحظات.',
     'online.declined' => 'الدفع لم يكتمل. تقدر تحاول تاني بكارت أو محفظة تانية.',
     'online.redirect_title' => 'جاري تحويلك إلى :name…',
     'online.redirect_text' => 'هتدفع بأمان على :name وبعدها هترجع هنا تلقائيًا.',
     'online.redirect_btn' => 'متابعة للدفع',
     'online.reason' => 'سبب الرفض: :reason.',
-    'online.below_min' => 'الدفع أونلاين عن طريق :name يبدأ من :min. ادفع المبلغ ده بالتحويل تحت، أو اختار الباقة السنوية أو ضيفه لطلب من المتجر علشان تدفع أونلاين.',
+    'online.below_min' => 'الدفع أونلاين يبدأ من :min، علشان كده المبلغ ده مينفعش يتدفع لوحده. ضيفه لطلب جهاز، أو اختار الباقة السنوية.',
 
     // Card without subscription
     'public.inactive_label' => 'الكارت غير مفعّل',
@@ -389,4 +387,6 @@ return [
     'admin.verify_btn' => 'تأكيد يدوي',
     'admin.verify_confirm' => 'تأكيد هذا البريد الإلكتروني يدويًا؟',
     'footer.contact' => 'تواصل معنا',
+    'online.unavailable' => 'الدفع أونلاين غير متاح حاليًا. حاول تاني بعد شوية أو تواصل مع الدعم.',
+    'plans.with_device' => 'متاحة مع طلب كارت أو سوار أو قلادة (الدفع أونلاين يبدأ من 50 ج.م).',
 ];

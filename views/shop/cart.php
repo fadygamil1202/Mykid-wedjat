@@ -36,9 +36,14 @@
       <a class="btn btn-primary btn-block" href="/checkout"><?= e(t('cart.checkout')) ?></a>
       <?php if ($plan): ?><p class="hint center" style="margin-top:.5rem"><?= e(t('cart.one_payment')) ?></p><?php endif; ?>
     <?php else: ?>
-      <!-- Subscription only: nothing to deliver, so go straight to payment -->
-      <form method="post" action="/subscription"><?= csrf_field() ?>
-        <button class="btn btn-primary btn-block" type="submit" name="plan_id" value="<?= e($plan['id']) ?>"><?= e(t('cart.pay_now')) ?></button></form>
+      <?php if (plan_payable_alone($plan)): ?>
+        <!-- Subscription only: nothing to deliver, so go straight to payment -->
+        <form method="post" action="/subscription"><?= csrf_field() ?>
+          <button class="btn btn-primary btn-block" type="submit" name="plan_id" value="<?= e($plan['id']) ?>"><?= e(t('cart.pay_now')) ?></button></form>
+      <?php else: ?>
+        <p class="hint warn"><?= e(t('plans.with_device')) ?></p>
+        <a class="btn btn-primary btn-block" href="/shop"><?= icon('bag') ?> <?= e(t('nav.shop')) ?></a>
+      <?php endif; ?>
     <?php endif; ?>
   </section>
 </div>

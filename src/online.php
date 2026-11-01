@@ -34,10 +34,13 @@ function online_available(array $payment): bool
     return online_gateway() !== null && (float)$payment['amount'] > 0 && (float)$payment['amount'] >= online_min_amount();
 }
 
-/** Show the manual transfer instructions: always when this payment can't be paid online. */
-function manual_payment_enabled(array $payment): bool
+/**
+ * Can this plan be bought on its own? Payments are online only, and the gateway has a
+ * minimum (XPay: 50 EGP), so a cheaper plan can only be bought together with a device order.
+ */
+function plan_payable_alone(array $plan): bool
 {
-    return !online_available($payment) || (bool)config('payment.manual', config('paymob.manual', true));
+    return online_gateway() !== null && (float)$plan['price'] >= online_min_amount();
 }
 
 /** POST /payments/{id}/pay: create the gateway's checkout and send the parent there. */
