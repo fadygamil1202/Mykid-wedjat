@@ -235,47 +235,10 @@ function admin_order_status(int $id): void
     }
     if ($status !== $order['status']) {
         notify((int)$order['user_id'], 'notify.order_status', ['id' => $id, 'status' => '@order.' . $status]);
+        if ($status === 'shipped') notify((int)$order['user_id'], 'notify.order_shipped_activate', ['id' => $id]);
     }
     flash('success', t('saved'));
     redirect("admin/orders/{$id}");
-}
-
-/** Errors are collected per serial; each one is assigned on its own. */
-function assign_serials_from_input(): array
-{
-    return array_values(array_filter(array_map('trim', preg_split('/[\r\n,]+/', input('serials')))));
-}
-
-/** POST /admin/order-items/{id}/assign: put shelf devices (by serial) on this order line's child. */
-function admin_item_assign(int $itemId): void
-{
-    $admin = require_admin();
-    $item = q_one('SELECT * FROM order_items WHERE id=?', [$itemId]);
-    if (!$item) abort(404);
-    $back = "admin/orders/{$item['order_id']}";
-    if (!$item['child_id']) {
-        flash('error', t('admin.item_no_child'));
-        redirect($back);
-    }
-    $left = (int)$item['qty'] - (int)q_one('SELECT COUNT(*) n FROM tags WHERE order_item_id=?', [$itemId])['n'];
-    $done = 0;
-    $errors = [];
-    foreach (assign_serials_from_input() as $input) {
-        if ($done >= $left) break;
-        $tag = device_find($input);
-        $label = $tag ? serial_format($tag['serial']) : $input;
-        if (!$tag) $errors[] = t('devices.err_not_found', ['serial' => $label]);
-        elseif ((int)$tag['product_id'] !== (int)$item['product_id']) $errors[] = t('devices.err_wrong_product', ['serial' => $label]);
-        elseif ($err = device_assign($tag, (int)$item['child_id'], 'order', ['order_item_id' => $itemId, 'user_id' => $admin['id']])) $errors[] = t($err, ['serial' => $label]);
-        else $done++;
-    }
-    if ($done) {
-        q("UPDATE orders SET status='processing' WHERE id=? AND status='paid'", [$item['order_id']]);
-        flash('success', t('devices.assigned_n', ['n' => $done]));
-    }
-    foreach ($errors as $e) flash('error', $e);
-    if (!$done && !$errors) flash('error', t('devices.err_empty'));
-    redirect($back);
 }
 
 // ---------- Devices ----------
@@ -339,6 +302,15 @@ function admin_device_reset(int $id): void
     $admin = require_admin();
     device_reset($id, (int)$admin['id']);
     flash('success', t('devices.reset_done'));
+    redirect("admin/devices/{$id}");
+}
+
+/** POST /admin/devices/{id}/release: a returned shelf device may be activated by a parent again. */
+function admin_device_release(int $id): void
+{
+    require_admin();
+    q("UPDATE tags SET self_activation = 1 WHERE id = ? AND status = 'unassigned'", [$id]);
+    flash('success', t('devices.released'));
     redirect("admin/devices/{$id}");
 }
 

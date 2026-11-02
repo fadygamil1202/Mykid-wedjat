@@ -9,6 +9,14 @@
 <?php if ($payment && $payment['status'] === 'pending'): ?>
   <div class="flash flash-info"><?= e(t('orders.awaiting_payment')) ?> <a href="/payments/<?= e($payment['id']) ?>"><?= e(t('sub.pending_link')) ?></a></div>
 <?php endif; ?>
+<?php $toActivate = array_sum(array_map(fn($i) => max(0, (int)$i['qty'] - (int)$i['activated']), $items)); ?>
+<?php if ($toActivate > 0 && in_array($order['status'], ['paid', 'processing', 'shipped', 'delivered'], true)): ?>
+  <div class="upsell" style="margin:0 0 1rem">
+    <strong><?= icon('nfc') ?> <?= e(t('orders.activate_title', ['n' => $toActivate])) ?></strong>
+    <p class="small"><?= e(t('orders.activate_text')) ?></p>
+    <a class="btn btn-primary btn-sm" href="/devices/activate"><?= e(t('activate.title')) ?></a>
+  </div>
+<?php endif; ?>
 <div class="cols">
   <section class="card col-main">
     <ul class="list">

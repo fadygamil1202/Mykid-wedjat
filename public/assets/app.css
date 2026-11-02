@@ -289,10 +289,6 @@ td .row { flex-wrap: nowrap; }
 .pay-online { margin: 0 0 1rem; }
 .pay-online .hint { margin: .5rem 0 0; }
 
-/* Assign devices by serial */
-.assign-form { display: flex; gap: .5rem; align-items: flex-start; margin-top: .5rem; }
-.assign-form textarea { min-height: 44px; flex: 1; font-family: ui-monospace, Menlo, monospace; text-transform: uppercase; }
-
 /* Timeline */
 .timeline { display: flex; gap: .25rem; margin: .5rem 0 1rem; }
 .timeline span { flex: 1; height: 8px; border-radius: 999px; background: var(--line); }

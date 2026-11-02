@@ -35,6 +35,14 @@
     <button class="btn" type="submit"><?= icon('refresh') ?> <?= e(t('devices.reset')) ?></button></form>
 </section>
 <?php elseif ($tag['status'] === 'unassigned'): ?>
+<?php if (!$tag['self_activation']): ?>
+<section class="card no-print">
+  <h2><?= e(t('devices.allow_activation')) ?></h2>
+  <p class="hint"><?= e(t('devices.allow_activation_hint')) ?></p>
+  <form method="post" action="/admin/devices/<?= e($tag['id']) ?>/release"><?= csrf_field() ?>
+    <button class="btn btn-primary" type="submit"><?= icon('unlock') ?> <?= e(t('devices.allow_activation')) ?></button></form>
+</section>
+<?php endif; ?>
 <section class="card no-print">
   <h2><?= e(t('devices.void')) ?></h2>
   <p class="hint"><?= e(t('devices.void_hint')) ?></p>
