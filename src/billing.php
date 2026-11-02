@@ -191,13 +191,6 @@ function subscription_activate(int $subscriptionId): void
       [$start->format('Y-m-d H:i:s'), $end->format('Y-m-d H:i:s'), $subscriptionId]);
 }
 
-/** Create a device for a child. The token is what goes on the NFC chip and QR code. */
-function tag_create(int $childId, string $type, ?int $orderItemId = null, ?int $replacesTagId = null): int
-{
-    q('INSERT INTO tags (child_id, type, token, order_item_id, replaces_tag_id) VALUES (?,?,?,?,?)',
-      [$childId, $type, random_token(), $orderItemId, $replacesTagId]);
-    return (int)db()->lastInsertId();
-}
 
 /** Display state of a subscription row: active, expired, pending or cancelled. */
 function sub_state(array $s): string

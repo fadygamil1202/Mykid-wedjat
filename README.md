@@ -141,7 +141,30 @@ Each product can track its stock (**Admin → Products → product → Stock**).
 - **Declined, cancelled before shipping, or not paid in time:** the units come back.
 - **Unpaid orders expire** after `stock.hold_minutes` (15). Pressing "Pay online" restarts the timer. A payment that finishes later (Fawry at an outlet, pending wallet) holds the units for `stock.async_hold_hours` (48). Expired orders are cleaned up whenever the shop, cart, checkout or admin pages load, so no cron job is needed.
 - **Paid after expiring:** the order is revived if the units are still there. Otherwise admins get a "refund needed" alert.
-- **Replacement devices** take one unit of the first product of that type. Issuing one is refused when it's out of stock.
-- **Admins** add or remove units with a reason and a note. Every change is in the product's **stock history**. The dashboard and notifications warn when a product runs low or out.
+- **Replacement devices** come from the shelf by serial number (see below).
+- **Admins:** stock now follows the devices (see *Devices made in batches* below). Every change is in the product's **stock history**. The dashboard and notifications warn when a product runs low or out.
 
 **Existing database:** run `database/migrations/004_stock.sql` once in phpMyAdmin before uploading the new files. Existing products start untracked (unlimited); turn tracking on per product and enter the quantity you have.
+
+## Devices made in batches
+
+Devices are produced ahead of time and linked to a child later.
+
+1. **Admin → Devices → Generate devices:** choose the product and quantity. Each device gets a secret link (for the NFC chip and QR code) and a random 10-character **serial number** (e.g. `K7QM-3XRP-9D`; no 0/O or 1/I) to print on the device. Download the batch as a **CSV** (`serial, url, product, type, status`), write the links to the chips, and print the serials. Keep the CSV private: it contains the secret links.
+2. **Stock is the devices:**
+   - generating adds them;
+   - checkout reserves them (as before);
+   - a parent activation, a replacement or a write-off takes one;
+   - a reset puts one back.
+
+   There is no manual stock form any more. A product starts being tracked with its first batch.
+3. **Orders:** on the paid order, type the serial of each device you take from the shelf, or paste the link you get by scanning its QR. The device must be on the shelf and be the same product. It works immediately.
+4. **Parents activate devices themselves** (e.g. bought at an event): **Child → Activate a device**, then enter the serial. Rate limited, and the same error is shown for an unknown or already-used serial.
+5. **Replacements:** enter the serial of a shelf device of the same type. The old device is retired.
+6. **Reset** (Admin → Devices → device): for a device that came back to you. It is unlinked, its scan history is deleted, and it goes back on the shelf. Only an admin can assign it again, because the previous family knows its serial.
+7. **Write off** a damaged or missing shelf device.
+
+A device that is on the shelf (or written off) shows "This device is not activated yet" when scanned. Devices made before this change keep working, and get a serial the first time Admin → Devices is opened.
+
+**Existing database:** run `database/migrations/005_device_batches.sql` once in phpMyAdmin (after `004_stock.sql`) before uploading the new files.
+

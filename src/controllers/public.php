@@ -30,7 +30,7 @@ function load_tag_by_token(string $token): array
         abort(429);
     }
     $tag = q_one('SELECT t.*, c.first_name, c.date_of_birth, c.parent_id FROM tags t
-                  JOIN children c ON c.id = t.child_id WHERE t.token = ?', [$token]);
+                  LEFT JOIN children c ON c.id = t.child_id WHERE t.token = ?', [$token]);
     if (!$tag) abort(404, t('public.not_found'));
     return $tag;
 }
@@ -45,6 +45,12 @@ function log_scan(array $tag, string $action): void
 function public_emergency(string $token): void
 {
     $tag = load_tag_by_token($token);
+    if (!$tag['child_id'] || in_array($tag['status'], ['unassigned', 'void'], true)) {
+        header('X-Robots-Tag: noindex, nofollow');
+        header('Cache-Control: no-store');
+        view('public/locked', ['title' => t('public.title'), 'variant' => 'unassigned'], 'layout_plain');
+        return;
+    }
     $parentId = (int)$tag['parent_id'];
 
     // Without an active subscription the card doesn't work at all
@@ -77,7 +83,7 @@ function public_emergency(string $token): void
 function public_call(string $token, int $contactId): void
 {
     $tag = load_tag_by_token($token);
-    if ($tag['status'] !== 'active' || !active_subscription((int)$tag['parent_id'])) abort(404, t('public.not_found'));
+    if ($tag['status'] !== 'active' || !$tag['child_id'] || !active_subscription((int)$tag['parent_id'])) abort(404, t('public.not_found'));
     $contact = q_one('SELECT * FROM emergency_contacts WHERE id=? AND child_id=?', [$contactId, $tag['child_id']]);
     if (!$contact) abort(404, t('public.no_contact'));
 

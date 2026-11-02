@@ -1,11 +1,15 @@
+<?php $assigned = (bool)$tag['child_id']; ?>
 <div class="page-head no-print">
-  <div><h1><?= e(t('admin.device_n', ['id' => $tag['id']])) ?> · <?= e(t('tag.' . $tag['type'])) ?></h1>
-    <p class="muted"><?= e($tag['first_name'] . ' ' . $tag['last_name']) ?> · <a href="/admin/users/<?= e($tag['parent_id']) ?>"><?= e($tag['parent_name']) ?></a></p></div>
+  <div><h1><span class="code" dir="ltr"><?= e(serial_format($tag['serial'])) ?></span> · <?= e($tag['name_en'] ? loc($tag, 'name') : t('tag.' . $tag['type'])) ?></h1>
+    <p class="muted">
+      <?php if ($assigned): ?><?= e($tag['first_name'] . ' ' . $tag['last_name']) ?> · <a href="/admin/users/<?= e($tag['parent_id']) ?>"><?= e($tag['parent_name']) ?></a>
+      <?php else: ?><?= e(t('devices.not_assigned')) ?><?php if ($tag['status'] === 'unassigned' && !$tag['self_activation']): ?> · <?= e(t('devices.admin_only')) ?><?php endif; ?><?php endif; ?>
+      <?php if ($tag['batch_id']): ?> · <a href="/admin/devices/generate#batch-<?= e($tag['batch_id']) ?>"><?= e(t('devices.batch_n', ['id' => $tag['batch_id']])) ?></a><?php endif; ?></p></div>
   <span class="badge badge-<?= e($tag['status']) ?>"><?= e(t('tags.status.' . $tag['status'])) ?></span>
 </div>
 
 <section class="card">
-  <?php $child = $tag; $qrLink = $tag['status'] === 'replaced' ? null : $link; $locked = $tag['status'] !== 'active'; require BASE_PATH . '/views/partials/id_card.php'; ?>
+  <?php $child = $tag; $qrLink = in_array($tag['status'], ['replaced', 'void'], true) ? null : $link; $locked = $tag['status'] === 'locked'; require BASE_PATH . '/views/partials/id_card.php'; ?>
   <div class="no-print">
     <h2><?= e(t('admin.nfc_link')) ?></h2>
     <p class="hint"><?= e(t('admin.nfc_help')) ?></p>
@@ -23,6 +27,23 @@
   </div>
 </section>
 
+<?php if (in_array($tag['status'], ['active', 'locked', 'replaced'], true)): ?>
+<section class="card no-print">
+  <h2><?= e(t('devices.reset')) ?></h2>
+  <p class="hint"><?= e(t('devices.reset_hint')) ?></p>
+  <form method="post" action="/admin/devices/<?= e($tag['id']) ?>/reset" data-confirm="<?= e(t('devices.reset_confirm')) ?>"><?= csrf_field() ?>
+    <button class="btn" type="submit"><?= icon('refresh') ?> <?= e(t('devices.reset')) ?></button></form>
+</section>
+<?php elseif ($tag['status'] === 'unassigned'): ?>
+<section class="card no-print">
+  <h2><?= e(t('devices.void')) ?></h2>
+  <p class="hint"><?= e(t('devices.void_hint')) ?></p>
+  <form method="post" action="/admin/devices/<?= e($tag['id']) ?>/void" data-confirm="<?= e(t('devices.void_confirm')) ?>"><?= csrf_field() ?>
+    <button class="btn btn-danger" type="submit"><?= icon('x') ?> <?= e(t('devices.void')) ?></button></form>
+</section>
+<?php endif; ?>
+
+<?php if ($assigned): ?>
 <section class="card no-print">
   <h2><?= e(t('child.scan_log')) ?></h2>
   <?php if (!$scans): ?><p class="muted"><?= e(t('dash.no_scans')) ?></p><?php endif; ?>
@@ -30,3 +51,5 @@
     <?php foreach ($scans as $s): ?><li><span><?= icon($s['action'] === 'call' ? 'phone' : 'eye') ?> <?= e(t('scan.kind.' . $s['action'])) ?></span><span class="muted small"><?= e(format_dt($s['created_at'])) ?></span></li><?php endforeach; ?>
   </ul>
 </section>
+<?php endif; ?>
+<script src="/assets/qrcode.js"></script>

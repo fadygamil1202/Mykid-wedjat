@@ -27,10 +27,10 @@ function product_available(array $product): ?int
 /** Log one stock change and warn admins when a product runs low or out. */
 function stock_log(int $productId, int $change, int $after, string $reason, array $extra = []): void
 {
-    q('INSERT INTO stock_movements (product_id, change_qty, stock_after, reason, order_id, tag_request_id, user_id, note)
-       VALUES (?,?,?,?,?,?,?,?)', [
+    q('INSERT INTO stock_movements (product_id, change_qty, stock_after, reason, order_id, tag_request_id, tag_id, user_id, note)
+       VALUES (?,?,?,?,?,?,?,?,?)', [
         $productId, $change, $after, $reason, $extra['order_id'] ?? null, $extra['tag_request_id'] ?? null,
-        $extra['user_id'] ?? null, isset($extra['note']) ? mb_substr((string)$extra['note'], 0, 190) : null,
+        $extra['tag_id'] ?? null, $extra['user_id'] ?? null, isset($extra['note']) ? mb_substr((string)$extra['note'], 0, 190) : null,
     ]);
     if ($change < 0) {
         $before = $after - $change;
@@ -152,10 +152,4 @@ function stock_release_expired(): void
             order_release_stock((int)$r['id']);
         }
     }
-}
-
-/** Product that a replacement device of this type is taken from (first visible one of that type). */
-function product_for_type(string $type): ?array
-{
-    return q_one('SELECT * FROM products WHERE type = ? ORDER BY is_active DESC, sort_order, id LIMIT 1', [$type]);
 }

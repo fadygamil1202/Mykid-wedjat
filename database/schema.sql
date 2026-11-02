@@ -150,19 +150,41 @@ CREATE TABLE order_items (
   FOREIGN KEY (child_id) REFERENCES children(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- A physical device (card / bracelet / necklace). Its random token is the
--- link written to the NFC chip and the QR code. Only admins ever see it.
+-- Devices are made in batches (Admin > Devices > Generate): the CSV of serials and links
+-- goes to whoever writes the NFC chips.
+CREATE TABLE device_batches (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  product_id INT UNSIGNED NOT NULL,
+  qty INT UNSIGNED NOT NULL,
+  note VARCHAR(190) NULL,
+  created_by INT UNSIGNED NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (product_id) REFERENCES products(id),
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- A physical device (card / bracelet / necklace). Its random token is the link written
+-- to the NFC chip and QR code; only admins ever see it. The serial is printed on the
+-- device: an admin assigns it to an order with it, or a parent activates it with it.
+-- unassigned (on the shelf) -> active -> locked / replaced; void = written off.
 CREATE TABLE tags (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  child_id INT UNSIGNED NOT NULL,
+  child_id INT UNSIGNED NULL,
   type ENUM('card','bracelet','necklace') NOT NULL,
+  product_id INT UNSIGNED NULL,
   token CHAR(32) NOT NULL UNIQUE,
-  status ENUM('active','locked','replaced') NOT NULL DEFAULT 'active',
+  serial CHAR(10) NULL UNIQUE,                 -- random, shown as XXXX-XXXX-XX
+  batch_id INT UNSIGNED NULL,
+  self_activation TINYINT(1) NOT NULL DEFAULT 1, -- 0 after a reset: only an admin can assign it again
+  status ENUM('unassigned','active','locked','replaced','void') NOT NULL DEFAULT 'unassigned',
   order_item_id INT UNSIGNED NULL,
   replaces_tag_id INT UNSIGNED NULL,
   locked_at DATETIME NULL,
+  assigned_at DATETIME NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (child_id) REFERENCES children(id) ON DELETE CASCADE,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
+  FOREIGN KEY (batch_id) REFERENCES device_batches(id) ON DELETE SET NULL,
   FOREIGN KEY (order_item_id) REFERENCES order_items(id) ON DELETE SET NULL,
   FOREIGN KEY (replaces_tag_id) REFERENCES tags(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -208,9 +230,10 @@ CREATE TABLE stock_movements (
   product_id INT UNSIGNED NOT NULL,
   change_qty INT NOT NULL,                 -- negative = out, positive = in
   stock_after INT NOT NULL,
-  reason ENUM('order','order_released','replacement','received','correction') NOT NULL,
+  reason ENUM('order','order_released','replacement','received','correction','produced','activated','returned','void') NOT NULL,
   order_id INT UNSIGNED NULL,
   tag_request_id INT UNSIGNED NULL,
+  tag_id INT UNSIGNED NULL,               -- the device, for produced/activated/returned/void
   user_id INT UNSIGNED NULL,               -- admin who made a manual change
   note VARCHAR(190) NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -218,6 +241,7 @@ CREATE TABLE stock_movements (
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
   FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL,
   FOREIGN KEY (tag_request_id) REFERENCES tag_requests(id) ON DELETE SET NULL,
+  FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE SET NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

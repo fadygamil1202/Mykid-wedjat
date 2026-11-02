@@ -22,7 +22,9 @@
 <div class="cols">
   <div class="col-main">
     <section class="card">
-      <div class="card-head"><h2><?= e(t('child.devices')) ?></h2><a class="btn btn-sm" href="/shop"><?= icon('plus') ?> <?= e(t('child.add_device')) ?></a></div>
+      <div class="card-head"><h2><?= e(t('child.devices')) ?></h2>
+        <span class="row"><a class="btn btn-sm" href="/devices/activate?child=<?= e($child['id']) ?>"><?= icon('nfc') ?> <?= e(t('activate.title')) ?></a>
+          <a class="btn btn-sm" href="/shop"><?= icon('plus') ?> <?= e(t('child.add_device')) ?></a></span></div>
       <?php if (!$tags): ?>
         <p class="muted"><?= e(t('child.no_devices')) ?></p>
       <?php endif; ?>
@@ -68,7 +70,7 @@
   <section class="card col-side">
     <div class="card-head"><h2><?= e(t('child.summary')) ?></h2><a class="small" href="/children/<?= e($child['id']) ?>/emergency"><?= e(t('edit')) ?></a></div>
     <div class="facts">
-      <div><span class="label"><?= e(t('field.blood_type')) ?></span><span dir="ltr"><?= e($profile['blood_type'] ?: '—') ?></span></div>
+      <div><span class="label"><?= e(t('field.blood_type')) ?></span><span dir="ltr"><?= e(($profile['blood_type'] ?? '') ?: '—') ?></span></div>
       <div><span class="label"><?= e(t('field.allergies')) ?></span>
         <?php $al = json_decode($profile['allergies'] ?? '[]', true) ?: []; ?>
         <?= $al ? e(implode('، ', array_column($al, 'name'))) : '—' ?></div>
