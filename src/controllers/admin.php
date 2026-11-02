@@ -212,7 +212,7 @@ function admin_order_show(int $id): void
                     FROM order_items i JOIN products p ON p.id=i.product_id LEFT JOIN children c ON c.id=i.child_id
                     WHERE i.order_id=?', [$id]);
     foreach ($items as &$item) {
-        $item['tags'] = q_all('SELECT id, status FROM tags WHERE order_item_id=?', [$item['id']]);
+        $item['tags'] = q_all('SELECT id, status, serial FROM tags WHERE order_item_id=?', [$item['id']]);
     }
     view('admin/order', [
         'title' => t('orders.number', ['id' => $id]), 'order' => $order, 'items' => $items,
@@ -240,51 +240,87 @@ function admin_order_status(int $id): void
     redirect("admin/orders/{$id}");
 }
 
-/** Create the devices for an order line (one per unit), ready to be written and printed. */
-function admin_item_issue(int $itemId): void
+/** Errors are collected per serial; each one is assigned on its own. */
+function assign_serials_from_input(): array
 {
-    require_admin();
-    $item = q_one('SELECT i.*, p.type FROM order_items i JOIN products p ON p.id=i.product_id WHERE i.id=?', [$itemId]);
+    return array_values(array_filter(array_map('trim', preg_split('/[\r\n,]+/', input('serials')))));
+}
+
+/** POST /admin/order-items/{id}/assign: put shelf devices (by serial) on this order line's child. */
+function admin_item_assign(int $itemId): void
+{
+    $admin = require_admin();
+    $item = q_one('SELECT * FROM order_items WHERE id=?', [$itemId]);
     if (!$item) abort(404);
+    $back = "admin/orders/{$item['order_id']}";
     if (!$item['child_id']) {
         flash('error', t('admin.item_no_child'));
-        redirect("admin/orders/{$item['order_id']}");
+        redirect($back);
     }
-    $issued = (int)q_one('SELECT COUNT(*) n FROM tags WHERE order_item_id=?', [$itemId])['n'];
-    for ($i = $issued; $i < (int)$item['qty']; $i++) {
-        tag_create((int)$item['child_id'], $item['type'], $itemId);
+    $left = (int)$item['qty'] - (int)q_one('SELECT COUNT(*) n FROM tags WHERE order_item_id=?', [$itemId])['n'];
+    $done = 0;
+    $errors = [];
+    foreach (assign_serials_from_input() as $input) {
+        if ($done >= $left) break;
+        $tag = device_find($input);
+        $label = $tag ? serial_format($tag['serial']) : $input;
+        if (!$tag) $errors[] = t('devices.err_not_found', ['serial' => $label]);
+        elseif ((int)$tag['product_id'] !== (int)$item['product_id']) $errors[] = t('devices.err_wrong_product', ['serial' => $label]);
+        elseif ($err = device_assign($tag, (int)$item['child_id'], 'order', ['order_item_id' => $itemId, 'user_id' => $admin['id']])) $errors[] = t($err, ['serial' => $label]);
+        else $done++;
     }
-    q("UPDATE orders SET status='processing' WHERE id=? AND status='paid'", [$item['order_id']]);
-    flash('success', t('admin.issued'));
-    redirect("admin/orders/{$item['order_id']}");
+    if ($done) {
+        q("UPDATE orders SET status='processing' WHERE id=? AND status='paid'", [$item['order_id']]);
+        flash('success', t('devices.assigned_n', ['n' => $done]));
+    }
+    foreach ($errors as $e) flash('error', $e);
+    if (!$done && !$errors) flash('error', t('devices.err_empty'));
+    redirect($back);
 }
 
 // ---------- Devices ----------
 
+const DEVICE_FILTERS = ['unassigned', 'active', 'locked', 'replaced', 'void'];
+
 function admin_tags(): void
 {
     require_admin();
+    devices_backfill_serials();
     $search = query_str('q');
-    $sql = 'SELECT t.*, c.first_name, c.last_name, u.name parent_name, u.id parent_id,
+    $status = in_array(query_str('status'), DEVICE_FILTERS, true) ? query_str('status') : '';
+    $sql = 'SELECT t.*, c.first_name, c.last_name, u.name parent_name, u.id parent_id, p.name_en, p.name_ar,
             (SELECT COUNT(*) FROM scan_logs l WHERE l.tag_id=t.id) scans
-            FROM tags t JOIN children c ON c.id=t.child_id JOIN users u ON u.id=c.parent_id';
+            FROM tags t LEFT JOIN children c ON c.id=t.child_id LEFT JOIN users u ON u.id=c.parent_id
+            LEFT JOIN products p ON p.id=t.product_id WHERE 1=1';
     $params = [];
-    if ($search !== '') {
-        $sql .= ' WHERE CONCAT(c.first_name, " ", c.last_name) LIKE ? OR u.name LIKE ? OR u.email LIKE ? OR t.id = ?';
-        array_push($params, "%{$search}%", "%{$search}%", "%{$search}%", ctype_digit($search) ? (int)$search : 0);
+    if ($status !== '') {
+        $sql .= ' AND t.status=?';
+        $params[] = $status;
     }
-    view('admin/tags', ['title' => t('admin.devices'), 'search' => $search, 'tags' => q_all($sql . ' ORDER BY t.id DESC LIMIT 200', $params)]);
+    if ($search !== '') {
+        $serial = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $search));
+        $sql .= ' AND (CONCAT(c.first_name, " ", c.last_name) LIKE ? OR u.name LIKE ? OR u.email LIKE ? OR t.serial LIKE ? OR t.id = ?)';
+        array_push($params, "%{$search}%", "%{$search}%", "%{$search}%", ($serial ?: '-') . '%', ctype_digit($search) ? (int)$search : 0);
+    }
+    view('admin/tags', [
+        'title' => t('admin.devices'), 'search' => $search, 'status' => $status,
+        'tags' => q_all($sql . ' ORDER BY t.id DESC LIMIT 300', $params),
+        'shelf' => q_all("SELECT p.id, p.name_en, p.name_ar, COUNT(t.id) n FROM products p
+                          LEFT JOIN tags t ON t.product_id=p.id AND t.status='unassigned' GROUP BY p.id ORDER BY p.sort_order, p.id"),
+    ]);
 }
 
 function admin_tag_show(int $id): void
 {
     require_admin();
-    $tag = q_one('SELECT t.*, c.first_name, c.last_name, u.name parent_name, u.id parent_id
-                  FROM tags t JOIN children c ON c.id=t.child_id JOIN users u ON u.id=c.parent_id WHERE t.id=?', [$id]);
+    devices_backfill_serials();
+    $tag = q_one('SELECT t.*, c.first_name, c.last_name, u.name parent_name, u.id parent_id, p.name_en, p.name_ar
+                  FROM tags t LEFT JOIN children c ON c.id=t.child_id LEFT JOIN users u ON u.id=c.parent_id
+                  LEFT JOIN products p ON p.id=t.product_id WHERE t.id=?', [$id]);
     if (!$tag) abort(404);
     view('admin/tag', [
         'title' => t('admin.device_n', ['id' => $id]), 'tag' => $tag, 'link' => public_link($tag['token']),
-        'profile' => emergency_profile((int)$tag['child_id']),
+        'profile' => $tag['child_id'] ? emergency_profile((int)$tag['child_id']) : [],
         'scans' => q_all('SELECT * FROM scan_logs WHERE tag_id=? ORDER BY created_at DESC LIMIT 20', [$id]),
     ]);
 }
@@ -292,9 +328,75 @@ function admin_tag_show(int $id): void
 function admin_tag_status(int $id, string $status): void
 {
     require_admin();
-    q("UPDATE tags SET status=?, locked_at=IF(?='locked', NOW(), NULL) WHERE id=? AND status<>'replaced'", [$status, $status, $id]);
+    q("UPDATE tags SET status=?, locked_at=IF(?='locked', NOW(), NULL) WHERE id=? AND status IN ('active','locked')", [$status, $status, $id]);
     flash('success', t('saved'));
     redirect("admin/devices/{$id}");
+}
+
+/** POST /admin/devices/{id}/reset: a returned device goes back on the shelf. */
+function admin_device_reset(int $id): void
+{
+    $admin = require_admin();
+    device_reset($id, (int)$admin['id']);
+    flash('success', t('devices.reset_done'));
+    redirect("admin/devices/{$id}");
+}
+
+/** POST /admin/devices/{id}/void: write off a damaged or missing shelf device. */
+function admin_device_void(int $id): void
+{
+    $admin = require_admin();
+    device_void($id, (int)$admin['id']);
+    flash('success', t('saved'));
+    redirect("admin/devices/{$id}");
+}
+
+// ---------- Device batches ----------
+
+function admin_device_generate_form(): void
+{
+    require_admin();
+    view('admin/device_generate', [
+        'title' => t('devices.generate'),
+        'products' => q_all('SELECT * FROM products ORDER BY sort_order, id'),
+        'batches' => q_all("SELECT b.*, p.name_en, p.name_ar, u.name admin_name,
+                              SUM(t.status='unassigned') on_shelf, SUM(t.status IN ('active','locked','replaced')) used, SUM(t.status='void') voided
+                            FROM device_batches b JOIN products p ON p.id=b.product_id LEFT JOIN users u ON u.id=b.created_by
+                            LEFT JOIN tags t ON t.batch_id=b.id GROUP BY b.id ORDER BY b.id DESC LIMIT 50"),
+    ]);
+}
+
+function admin_device_generate(): void
+{
+    $admin = require_admin();
+    $product = q_one('SELECT * FROM products WHERE id=?', [input_int('product_id') ?? 0]);
+    $qty = input_int('qty');
+    if (!$product || !$qty || $qty < 1 || $qty > 1000) {
+        flash('error', t('devices.generate_invalid'));
+        redirect('admin/devices/generate');
+    }
+    $batchId = device_batch_create($product, $qty, input('note'), (int)$admin['id']);
+    flash('success', t('devices.generated', ['n' => $qty, 'id' => $batchId]));
+    redirect('admin/devices/generate#batch-' . $batchId);
+}
+
+/** GET /admin/batches/{id}/csv: serials and links for writing the NFC chips. */
+function admin_batch_csv(int $id): void
+{
+    require_admin();
+    $batch = q_one('SELECT b.*, p.name_en, p.type FROM device_batches b JOIN products p ON p.id=b.product_id WHERE b.id=?', [$id]);
+    if (!$batch) abort(404);
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="mykid-wedjat-batch-' . $id . '.csv"');
+    header('Cache-Control: no-store');
+    $out = fopen('php://output', 'w');
+    fwrite($out, "\xEF\xBB\xBF"); // so Excel shows the file as UTF-8
+    fputcsv($out, ['serial', 'url', 'product', 'type', 'status']);
+    foreach (q_all('SELECT * FROM tags WHERE batch_id=? ORDER BY id', [$id]) as $t) {
+        fputcsv($out, [serial_format($t['serial']), public_link($t['token']), $batch['name_en'], $batch['type'], $t['status']]);
+    }
+    fclose($out);
+    exit;
 }
 
 // ---------- Replacement requests ----------
@@ -305,7 +407,7 @@ function admin_requests(): void
     $status = query_str('status') ?: 'pending';
     view('admin/requests', [
         'title' => t('admin.requests'), 'status' => $status,
-        'requests' => q_all("SELECT r.*, t.type, t.child_id, c.first_name, c.last_name, u.name parent_name,
+        'requests' => q_all("SELECT r.*, t.type, t.serial, t.child_id, c.first_name, c.last_name, u.name parent_name,
                              (SELECT status FROM payments p WHERE p.kind='replacement' AND p.ref_id=r.id ORDER BY p.id DESC LIMIT 1) pay_status
                              FROM tag_requests r JOIN tags t ON t.id=r.tag_id JOIN children c ON c.id=t.child_id
                              JOIN users u ON u.id=r.user_id WHERE r.status=? ORDER BY r.id DESC LIMIT 200",
@@ -320,24 +422,27 @@ function admin_request_handle(int $id, string $action): void
                   JOIN children c ON c.id=t.child_id WHERE r.id=? AND r.status='pending'", [$id]);
     if (!$req) abort(404);
     if ($action === 'complete') {
-        // The new device comes out of stock (the first product of that type)
-        $product = product_for_type($req['type']);
-        if ($product) {
-            db()->beginTransaction();
-            if (!stock_take((int)$product['id'], 1, 'replacement', ['tag_request_id' => $id, 'user_id' => $admin['id']])) {
-                db()->rollBack();
-                flash('error', t('stock.replacement_out', ['product' => loc($product, 'name')]));
-                redirect('admin/requests');
-            }
-            db()->commit();
+        $tag = device_find(input('serial'));
+        $back = 'admin/requests';
+        if (!$tag) {
+            flash('error', t('devices.err_not_found', ['serial' => input('serial') ?: '—']));
+            redirect($back);
         }
-        $newTag = tag_create((int)$req['child_id'], $req['type'], null, (int)$req['tag_id']);
+        if ($tag['type'] !== $req['type']) {
+            flash('error', t('devices.err_wrong_type', ['serial' => serial_format($tag['serial'])]));
+            redirect($back);
+        }
+        if ($err = device_assign($tag, (int)$req['child_id'], 'replacement',
+                ['replaces_tag_id' => (int)$req['tag_id'], 'tag_request_id' => $id, 'user_id' => $admin['id']])) {
+            flash('error', t($err, ['serial' => serial_format($tag['serial'])]));
+            redirect($back);
+        }
         q("UPDATE tags SET status='replaced' WHERE id=?", [$req['tag_id']]);
         q("UPDATE tag_requests SET status='completed', new_tag_id=?, handled_by=?, handled_at=NOW() WHERE id=?",
-          [$newTag, $admin['id'], $id]);
+          [$tag['id'], $admin['id'], $id]);
         notify((int)$req['user_id'], 'notify.replaced', ['name' => $req['first_name'], 'type' => '@tag.' . $req['type']]);
         flash('success', t('admin.request_done'));
-        redirect("admin/devices/{$newTag}");
+        redirect("admin/devices/{$tag['id']}");
     }
     q("UPDATE tag_requests SET status='rejected', handled_by=?, handled_at=NOW() WHERE id=?", [$admin['id'], $id]);
     notify((int)$req['user_id'], 'notify.request_rejected', ['name' => $req['first_name']]);
@@ -372,9 +477,6 @@ function product_input(): ?array
         'price' => filter_var(input('price'), FILTER_VALIDATE_FLOAT),
         'is_active' => isset($_POST['is_active']) ? 1 : 0, 'sort_order' => (int)input('sort_order', '0'),
     ];
-    $initial = filter_var(input('stock', '0'), FILTER_VALIDATE_INT);
-    $d['_track'] = isset($_POST['track_stock']);
-    $d['_initial'] = $initial === false ? 0 : max(0, $initial);
     if (!preg_match('/^[a-z0-9-]{2,80}$/', $d['slug']) || !in_array($d['type'], TAG_TYPES, true)
         || $d['name_en'] === '' || $d['name_ar'] === '' || $d['price'] === false || $d['price'] < 0) {
         flash('error', t('admin.product_invalid'));
@@ -393,13 +495,8 @@ function admin_product_create(): void
         redirect('admin/products/new');
     }
     $d['image'] = save_upload('image') ?? 'assets/products/' . $d['type'] . '.svg';
-    [$track, $initial] = [$d['_track'], $d['_initial']];
-    unset($d['_track'], $d['_initial']);
-    $d['stock'] = $track ? $initial : null;
+    $d['stock'] = 0; // stock = devices on the shelf: generate a batch to put it on sale
     q('INSERT INTO products (' . implode(',', array_keys($d)) . ') VALUES (' . rtrim(str_repeat('?,', count($d)), ',') . ')', array_values($d));
-    if ($track && $initial > 0) {
-        stock_log((int)db()->lastInsertId(), $initial, $initial, 'received', ['user_id' => current_user()['id'], 'note' => t('stock.initial')]);
-    }
     flash('success', t('saved'));
     redirect('admin/products');
 }
@@ -415,6 +512,7 @@ function admin_product_edit(int $id): void
                               WHERE m.product_id=? ORDER BY m.id DESC LIMIT 50', [$id]),
         'held' => (int)q_one("SELECT COALESCE(SUM(i.qty),0) n FROM order_items i JOIN orders o ON o.id=i.order_id
                               WHERE i.product_id=? AND o.status='pending_payment' AND o.stock_reserved=1", [$id])['n'],
+        'shelf' => (int)q_one("SELECT COUNT(*) n FROM tags WHERE product_id=? AND status='unassigned'", [$id])['n'],
     ]);
 }
 
@@ -433,44 +531,8 @@ function admin_product_update(int $id): void
         if (str_starts_with((string)$product['image'], 'uploads/')) @unlink(BASE_PATH . '/public/' . $product['image']);
         $d['image'] = $img;
     }
-    [$track, $initial] = [$d['_track'], $d['_initial']];
-    unset($d['_track'], $d['_initial']);
     $set = implode(',', array_map(fn($k) => "$k=?", array_keys($d)));
     q("UPDATE products SET {$set} WHERE id=?", [...array_values($d), $id]);
-    // Turning tracking on starts from the given quantity; turning it off makes the product unlimited
-    if ($track && $product['stock'] === null) {
-        q('UPDATE products SET stock = ? WHERE id = ?', [$initial, $id]);
-        if ($initial > 0) stock_log($id, $initial, $initial, 'received', ['user_id' => current_user()['id'], 'note' => t('stock.initial')]);
-    } elseif (!$track && $product['stock'] !== null) {
-        q('UPDATE products SET stock = NULL WHERE id = ?', [$id]);
-    }
-    flash('success', t('saved'));
-    redirect("admin/products/{$id}");
-}
-
-/** POST /admin/products/{id}/stock: units received (+) or removed (−, e.g. damaged or counted wrong). */
-function admin_product_stock(int $id): void
-{
-    $admin = require_admin();
-    $qty = filter_var(input('qty'), FILTER_VALIDATE_INT);
-    $reason = input('reason') === 'correction' ? 'correction' : 'received';
-    $product = q_one('SELECT * FROM products WHERE id=?', [$id]);
-    if (!$product || $product['stock'] === null) abort(404);
-    if ($qty === false || $qty === 0) {
-        flash('error', t('stock.bad_qty'));
-        redirect("admin/products/{$id}");
-    }
-    db()->beginTransaction();
-    $extra = ['user_id' => $admin['id'], 'note' => input('note')];
-    $ok = true;
-    if ($qty > 0) stock_put($id, $qty, $reason, $extra);
-    else $ok = stock_take($id, -$qty, $reason, $extra); // can't go below zero
-    if (!$ok) {
-        db()->rollBack();
-        flash('error', t('stock.not_enough'));
-        redirect("admin/products/{$id}");
-    }
-    db()->commit();
     flash('success', t('saved'));
     redirect("admin/products/{$id}");
 }

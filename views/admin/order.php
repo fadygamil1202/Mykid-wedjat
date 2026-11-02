@@ -12,13 +12,19 @@
           <div class="device-main">
             <strong><?= e(loc($it, 'name')) ?> × <?= e($it['qty']) ?></strong>
             <span class="muted small"><?= e(t('cart.for', ['name' => trim(($it['first_name'] ?? '') . ' ' . ($it['last_name'] ?? '')) ?: '—'])) ?> · <?= e(money($it['unit_price'] * $it['qty'])) ?></span>
-            <div class="small"><?= e(t('admin.issued_n', ['n' => $it['issued'], 'qty' => $it['qty']])) ?>
-              <?php foreach ($it['tags'] as $tg): ?> <a href="/admin/devices/<?= e($tg['id']) ?>">#<?= e($tg['id']) ?></a><?php endforeach; ?></div>
+            <div class="small"><?= e(t('devices.assigned_of', ['n' => $it['issued'], 'qty' => $it['qty']])) ?>
+              <?php foreach ($it['tags'] as $tg): ?> <a class="code" dir="ltr" href="/admin/devices/<?= e($tg['id']) ?>"><?= e(serial_format($tg['serial'])) ?></a><?php endforeach; ?></div>
+            <?php if ($it['issued'] < $it['qty'] && $it['child_id'] && in_array($order['status'], ['paid', 'processing'], true)): ?>
+              <form method="post" action="/admin/order-items/<?= e($it['id']) ?>/assign" class="assign-form"><?= csrf_field() ?>
+                <textarea name="serials" rows="<?= min(4, $it['qty'] - $it['issued']) ?>" required dir="ltr" autocapitalize="characters" autocomplete="off"
+                  placeholder="<?= e(t('devices.serials_ph')) ?>"></textarea>
+                <button class="btn btn-sm btn-primary" type="submit"><?= icon('nfc') ?> <?= e(t('devices.assign')) ?></button>
+              </form>
+              <p class="hint"><?= e(t('devices.assign_hint')) ?></p>
+            <?php elseif ($it['issued'] < $it['qty'] && $order['status'] === 'pending_payment'): ?>
+              <p class="hint"><?= e(t('devices.wait_payment')) ?></p>
+            <?php endif; ?>
           </div>
-          <?php if ($it['issued'] < $it['qty'] && $it['child_id']): ?>
-            <form method="post" action="/admin/order-items/<?= e($it['id']) ?>/issue"><?= csrf_field() ?>
-              <button class="btn btn-sm btn-primary" type="submit"><?= icon('nfc') ?> <?= e(t('admin.issue')) ?></button></form>
-          <?php endif; ?>
         </div>
       <?php endforeach; ?>
       <?php if ($order['plan_id']):

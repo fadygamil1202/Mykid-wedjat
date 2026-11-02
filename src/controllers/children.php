@@ -255,3 +255,37 @@ function tag_replace_submit(int $id): void
     flash('success', t('tags.request_sent'));
     redirect("children/{$tag['child_id']}");
 }
+
+// ---------- Activate a device with its serial number ----------
+
+function device_activate_form(): void
+{
+    $user = require_parent();
+    view('children/activate', [
+        'title'    => t('activate.title'),
+        'children' => q_all('SELECT id, first_name FROM children WHERE parent_id=? ORDER BY first_name', [$user['id']]),
+        'childId'  => (int)($_GET['child'] ?? 0),
+    ]);
+}
+
+/** A parent puts a device from the shelf (e.g. bought at an event) on one of their children. */
+function device_activate_submit(): void
+{
+    $user = require_parent();
+    $child = own_child($user, input_int('child_id') ?? 0);
+    // Serials are random, but limit guessing anyway
+    if (!rate_limit('activate:' . $user['id'], 10, 3600) || !rate_limit('activate', 20, 3600)) {
+        flash('error', t('login.too_many'));
+        redirect('devices/activate?child=' . $child['id']);
+    }
+    $tag = device_find(input('serial'));
+    // Same message whether the serial doesn't exist or isn't free, so serials can't be probed
+    if (!$tag || $tag['status'] !== 'unassigned' || !$tag['self_activation']
+        || device_assign($tag, (int)$child['id'], 'activated', ['user_id' => $user['id']])) {
+        flash('error', t('activate.invalid'));
+        redirect('devices/activate?child=' . $child['id']);
+    }
+    notify_admins('notify.admin_activated', ['serial' => serial_format($tag['serial']), 'name' => $user['name']]);
+    flash('success', t('activate.done', ['name' => $child['first_name']]));
+    redirect("children/{$child['id']}");
+}

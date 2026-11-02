@@ -11,7 +11,7 @@
     <div class="device">
       <span class="device-icon"><?= icon('refresh') ?></span>
       <div class="device-main">
-        <strong><?= e(t('tag.' . $r['type'])) ?> <a href="/admin/devices/<?= e($r['tag_id']) ?>">#<?= e($r['tag_id']) ?></a> · <?= e($r['first_name'] . ' ' . $r['last_name']) ?></strong>
+        <strong><?= e(t('tag.' . $r['type'])) ?> <a class="code" dir="ltr" href="/admin/devices/<?= e($r['tag_id']) ?>"><?= e(serial_format($r['serial'])) ?></a> · <?= e($r['first_name'] . ' ' . $r['last_name']) ?></strong>
         <span class="muted small"><?= e(t('reason.' . $r['reason'])) ?> · <a href="/admin/users/<?= e($r['user_id']) ?>"><?= e($r['parent_name']) ?></a> · <?= e(format_dt($r['created_at'])) ?></span>
         <?php if ($r['notes']): ?><div class="small"><?= e($r['notes']) ?></div><?php endif; ?>
         <?php if ($r['pay_status']): ?><span class="badge badge-<?= e($r['pay_status']) ?>"><?= e(t('pay.status.' . $r['pay_status'])) ?></span><?php endif; ?>
@@ -19,7 +19,8 @@
       </div>
       <?php if ($r['status'] === 'pending'): ?>
       <div class="row">
-        <form method="post" action="/admin/requests/<?= e($r['id']) ?>/complete" data-confirm="<?= e(t('admin.complete_confirm')) ?>"><?= csrf_field() ?>
+        <form method="post" action="/admin/requests/<?= e($r['id']) ?>/complete" class="row" data-confirm="<?= e(t('admin.complete_confirm')) ?>"><?= csrf_field() ?>
+          <input name="serial" required dir="ltr" autocapitalize="characters" autocomplete="off" placeholder="<?= e(t('devices.serial_ph')) ?>" style="min-height:40px;max-width:200px">
           <button class="btn btn-sm btn-primary" type="submit"><?= icon('nfc') ?> <?= e(t('admin.issue_replacement')) ?></button></form>
         <form method="post" action="/admin/requests/<?= e($r['id']) ?>/reject" data-confirm="<?= e(t('admin.reject_confirm')) ?>"><?= csrf_field() ?>
           <button class="btn btn-sm btn-ghost" type="submit"><?= e(t('admin.reject')) ?></button></form>

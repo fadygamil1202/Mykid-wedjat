@@ -1,7 +1,7 @@
 <?php
 // Page shown instead of the child's information.
 // $variant: 'locked' (device locked by the parent) or 'inactive' (no active subscription). $preview: parent's preview.
-$variant = ($variant ?? 'locked') === 'inactive' ? 'inactive' : 'locked';
+$variant = in_array($variant ?? 'locked', ['inactive', 'unassigned'], true) ? $variant : 'locked';
 ?>
 <div class="em">
   <?php if (!empty($preview)): ?>
