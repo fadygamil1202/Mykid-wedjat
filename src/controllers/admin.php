@@ -347,7 +347,7 @@ function admin_device_generate(): void
         flash('error', t('devices.generate_invalid'));
         redirect('admin/devices/generate');
     }
-    $batchId = device_batch_create($product, $qty, input('note'), (int)$admin['id']);
+    $batchId = device_batch_create($product, $qty, input('note'), (int)$admin['id'], isset($_POST['online']));
     flash('success', t('devices.generated', ['n' => $qty, 'id' => $batchId]));
     redirect('admin/devices/generate#batch-' . $batchId);
 }

@@ -4,16 +4,16 @@ declare(strict_types=1);
 /*
  * Devices made in batches.
  *
+ * Stock here is the website (online) stock: it drops through orders (reserved at checkout).
+ *
  *   1. Admin > Devices > Generate: N unassigned devices of a product, each with a secret link
  *      (token, written to the NFC chip / QR) and a random serial printed on the device.
- *      The batch downloads as a CSV. Stock goes up by N.
- *   2. A device leaves the shelf when
- *        - an admin assigns it to a paid order line by serial (stock was already taken at checkout),
- *        - an admin uses it for a replacement (stock −1),
- *        - a parent activates it with its serial (stock −1; e.g. bought at an event).
- *   3. Reset: a returned device goes back on the shelf (stock +1). Only an admin can assign it
- *      again, because the previous family knows its serial.
- *   4. Void: a damaged / lost unassigned device is written off (stock −1).
+ *      The batch downloads as a CSV. An "online" batch adds N to stock; a batch made for
+ *      stores and events doesn't touch it.
+ *   2. Devices are shipped unassigned; the parent activates each one with its serial
+ *      (never changes stock: an online sale was counted at checkout, a store sale isn't online stock).
+ *   3. Replacement (−1), reset of a returned device (+1, then admin must allow activation again)
+ *      and write-off (−1) change stock only for devices from online batches.
  */
 
 /** Serial alphabet without look-alikes (no 0/O, 1/I/L). 10 characters ≈ 50 bits. */
@@ -59,14 +59,23 @@ function devices_backfill_serials(): void
     }
 }
 
-/** Create a batch of unassigned devices and add them to the product's stock. Returns the batch id. */
-function device_batch_create(array $product, int $qty, string $note, int $adminId): int
+/** Does this device belong to the website stock? (devices made before batches existed do) */
+function device_online(array $tag): bool
+{
+    return !$tag['batch_id'] || (bool)(q_one('SELECT online FROM device_batches WHERE id = ?', [$tag['batch_id']])['online'] ?? 1);
+}
+
+/**
+ * Create a batch of unassigned devices. An online batch adds them to the product's stock;
+ * a batch for stores and events doesn't. Returns the batch id.
+ */
+function device_batch_create(array $product, int $qty, string $note, int $adminId, bool $online = true): int
 {
     $pdo = db();
     $pdo->beginTransaction();
     try {
-        q('INSERT INTO device_batches (product_id, qty, note, created_by) VALUES (?,?,?,?)',
-          [$product['id'], $qty, mb_substr($note, 0, 190) ?: null, $adminId]);
+        q('INSERT INTO device_batches (product_id, qty, online, note, created_by) VALUES (?,?,?,?,?)',
+          [$product['id'], $qty, $online ? 1 : 0, mb_substr($note, 0, 190) ?: null, $adminId]);
         $batchId = (int)$pdo->lastInsertId();
         for ($i = 0; $i < $qty; $i++) {
             // Retry on the (very unlikely) clash with an existing serial or token
@@ -80,9 +89,11 @@ function device_batch_create(array $product, int $qty, string $note, int $adminI
                 }
             }
         }
-        // Devices are the stock: a product starts being tracked with its first batch
-        q('UPDATE products SET stock = COALESCE(stock, 0) WHERE id = ?', [$product['id']]);
-        stock_put((int)$product['id'], $qty, 'produced', ['user_id' => $adminId, 'note' => t('devices.batch_n', ['id' => $batchId], 'en')]);
+        if ($online) {
+            // Devices are the online stock: a product starts being tracked with its first online batch
+            q('UPDATE products SET stock = COALESCE(stock, 0) WHERE id = ?', [$product['id']]);
+            stock_put((int)$product['id'], $qty, 'produced', ['user_id' => $adminId, 'note' => t('devices.batch_n', ['id' => $batchId], 'en')]);
+        }
         $pdo->commit();
         return $batchId;
     } catch (Throwable $ex) {
@@ -108,8 +119,9 @@ function stock_take_device(?int $productId, string $reason, array $extra): void
 }
 
 /**
- * Put an unassigned device on a child. $how: 'order' (no stock change: taken at checkout),
- * 'replacement' or 'activated' (one unit leaves stock). Returns an error key or null.
+ * Put an unassigned device on a child. $how: 'activated' or 'order' never change stock
+ * (an online sale was counted at checkout); 'replacement' takes one unit if the device is
+ * from an online batch. Returns an error key or null.
  */
 function device_assign(array $tag, int $childId, string $how, array $extra = []): ?string
 {
@@ -125,7 +137,7 @@ function device_assign(array $tag, int $childId, string $how, array $extra = [])
         q("UPDATE tags SET child_id = ?, status = 'active', assigned_at = NOW(), locked_at = NULL,
            order_item_id = ?, replaces_tag_id = ? WHERE id = ?",
           [$childId, $extra['order_item_id'] ?? null, $extra['replaces_tag_id'] ?? null, $tag['id']]);
-        if ($how !== 'order') {
+        if ($how === 'replacement' && device_online($tag)) {
             stock_take_device($tag['product_id'] ? (int)$tag['product_id'] : null, $how,
                 ['tag_id' => $tag['id'], 'tag_request_id' => $extra['tag_request_id'] ?? null, 'user_id' => $extra['user_id'] ?? null]);
         }
@@ -148,7 +160,7 @@ function device_reset(int $tagId, int $adminId): void
             q('DELETE FROM scan_logs WHERE tag_id = ?', [$tagId]);
             q("UPDATE tags SET child_id = NULL, status = 'unassigned', self_activation = 0, order_item_id = NULL,
                replaces_tag_id = NULL, assigned_at = NULL, locked_at = NULL WHERE id = ?", [$tagId]);
-            if ($tag['product_id']) {
+            if ($tag['product_id'] && device_online($tag)) {
                 q('UPDATE products SET stock = COALESCE(stock, 0) WHERE id = ?', [$tag['product_id']]);
                 stock_put((int)$tag['product_id'], 1, 'returned', ['tag_id' => $tagId, 'user_id' => $adminId]);
             }
@@ -169,7 +181,7 @@ function device_void(int $tagId, int $adminId): void
         $tag = q_one("SELECT * FROM tags WHERE id = ? AND status = 'unassigned' FOR UPDATE", [$tagId]);
         if ($tag) {
             q("UPDATE tags SET status = 'void' WHERE id = ?", [$tagId]);
-            stock_take_device($tag['product_id'] ? (int)$tag['product_id'] : null, 'void', ['tag_id' => $tagId, 'user_id' => $adminId]);
+            if (device_online($tag)) stock_take_device($tag['product_id'] ? (int)$tag['product_id'] : null, 'void', ['tag_id' => $tagId, 'user_id' => $adminId]);
         }
         $pdo->commit();
     } catch (Throwable $ex) {

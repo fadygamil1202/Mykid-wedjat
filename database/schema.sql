@@ -156,6 +156,7 @@ CREATE TABLE device_batches (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   product_id INT UNSIGNED NOT NULL,
   qty INT UNSIGNED NOT NULL,
+  online TINYINT(1) NOT NULL DEFAULT 1,   -- 1 = adds to the website stock; 0 = made for stores/events
   note VARCHAR(190) NULL,
   created_by INT UNSIGNED NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

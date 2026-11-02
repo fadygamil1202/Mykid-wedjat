@@ -151,14 +151,14 @@ Each product can track its stock (**Admin → Products → product → Stock**).
 Devices are produced ahead of time and linked to a child later.
 
 1. **Admin → Devices → Generate devices:** choose the product and quantity. Each device gets a secret link (for the NFC chip and QR code) and a random 10-character **serial number** (e.g. `K7QM-3XRP-9D`; no 0/O or 1/I) to print on the device. Download the batch as a **CSV** (`serial, url, product, type, status`), write the links to the chips, and print the serials. Keep the CSV private: it contains the secret links.
-2. **Stock is the devices:**
-   - generating adds them;
-   - checkout reserves them (as before);
-   - a parent activation, a replacement or a write-off takes one;
-   - a reset puts one back.
+2. **Stock is the online (website) stock only.** When generating, tick or untick **Add to online stock**:
+   - an *online* batch adds its quantity to the product's stock; a batch made for **stores and events** adds nothing (its devices can still be activated by parents);
+   - checkout reserves units and payment turns them into a sale (as before);
+   - a **parent activation never changes stock** (an online sale was already counted at checkout; a store sale is not online stock);
+   - a replacement or a write-off takes one, and a reset puts one back, **only for devices from online batches** (devices made before batches count as online).
 
-   There is no manual stock form any more. A product starts being tracked with its first batch.
-3. **Orders:** ship any device of the ordered product from the shelf; nothing to assign. The parent activates each one with its serial (the order page shows "N devices to activate", and marking the order *shipped* reminds them). A device activated by a parent who has a paid order line for that product counts against that order (its stock was taken at checkout); otherwise it takes one unit. The admin order page shows "Activated by the parent: n of qty".
+   There is no manual stock form any more. A product starts being tracked with its first online batch.
+3. **Orders:** ship any device of the ordered product from the shelf; nothing to assign. The parent activates each one with its serial (the order page shows "N devices to activate", and marking the order *shipped* reminds them). A device activated by a parent who has a paid order line for that product is linked to that order. The admin order page shows "Activated by the parent: n of qty".
 4. **Parents activate devices** from **Child → Activate a device** (or the order page): serial + child. The child chosen at checkout is pre-selected. It works the same for devices bought elsewhere (e.g. at an event). Rate limited, and the same error is shown for an unknown or already-used serial.
 5. **Replacements:** enter the serial of a shelf device of the same type. The old device is retired.
 6. **Reset** (Admin → Devices → device): for a device that came back to you. It is unlinked, its scan history is deleted, and it goes back on the shelf. Parents can't activate it (the previous family knows its serial) until you press **Allow parent activation** just before shipping it to a new customer.
@@ -166,5 +166,5 @@ Devices are produced ahead of time and linked to a child later.
 
 A device that is on the shelf (or written off) shows "This device is not activated yet" when scanned. Devices made before this change keep working, and get a serial the first time Admin → Devices is opened.
 
-**Existing database:** run `database/migrations/005_device_batches.sql` once in phpMyAdmin (after `004_stock.sql`) before uploading the new files.
+**Existing database:** run `database/migrations/005_device_batches.sql` (after `004_stock.sql`) and then `database/migrations/006_batch_channel.sql` once in phpMyAdmin before uploading the new files.
 
