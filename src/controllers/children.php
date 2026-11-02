@@ -258,13 +258,27 @@ function tag_replace_submit(int $id): void
 
 // ---------- Activate a device with its serial number ----------
 
+/**
+ * The parent's oldest paid order line (optionally of one product) that still has devices to
+ * activate. Devices are shipped unassigned; the parent links each one with its serial.
+ */
+function order_item_awaiting_device(int $userId, ?int $productId = null): ?array
+{
+    return q_one("SELECT i.* FROM order_items i JOIN orders o ON o.id = i.order_id
+                  WHERE o.user_id = ? AND o.status IN ('paid','processing','shipped','delivered')
+                    AND (? IS NULL OR i.product_id = ?)
+                    AND (SELECT COUNT(*) FROM tags t WHERE t.order_item_id = i.id) < i.qty
+                  ORDER BY o.id, i.id LIMIT 1", [$userId, $productId, $productId]);
+}
+
 function device_activate_form(): void
 {
     $user = require_parent();
+    $waiting = order_item_awaiting_device((int)$user['id']);
     view('children/activate', [
         'title'    => t('activate.title'),
         'children' => q_all('SELECT id, first_name FROM children WHERE parent_id=? ORDER BY first_name', [$user['id']]),
-        'childId'  => (int)($_GET['child'] ?? 0),
+        'childId'  => (int)($_GET['child'] ?? ($waiting['child_id'] ?? 0)),
     ]);
 }
 
@@ -280,8 +294,10 @@ function device_activate_submit(): void
     }
     $tag = device_find(input('serial'));
     // Same message whether the serial doesn't exist or isn't free, so serials can't be probed
+    $item = $tag ? order_item_awaiting_device((int)$user['id'], (int)$tag['product_id']) : null;
+    $how = $item ? ['order', ['order_item_id' => (int)$item['id'], 'user_id' => $user['id']]] : ['activated', ['user_id' => $user['id']]];
     if (!$tag || $tag['status'] !== 'unassigned' || !$tag['self_activation']
-        || device_assign($tag, (int)$child['id'], 'activated', ['user_id' => $user['id']])) {
+        || device_assign($tag, (int)$child['id'], $how[0], $how[1])) {
         flash('error', t('activate.invalid'));
         redirect('devices/activate?child=' . $child['id']);
     }

@@ -195,7 +195,8 @@ function order_show(int $id): void
     view('orders/show', [
         'title'   => t('orders.number', ['id' => $id]),
         'order'   => $order,
-        'items'   => q_all('SELECT i.*, p.name_en, p.name_ar, p.image, c.first_name FROM order_items i
+        'items'   => q_all('SELECT i.*, p.name_en, p.name_ar, p.image, c.first_name,
+                              (SELECT COUNT(*) FROM tags t WHERE t.order_item_id=i.id) activated FROM order_items i
                             JOIN products p ON p.id=i.product_id LEFT JOIN children c ON c.id=i.child_id
                             WHERE i.order_id=?', [$id]),
         'payment' => q_one("SELECT * FROM payments WHERE kind='order' AND ref_id=? ORDER BY id DESC LIMIT 1", [$id]),

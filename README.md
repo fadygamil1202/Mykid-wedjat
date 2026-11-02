@@ -158,10 +158,10 @@ Devices are produced ahead of time and linked to a child later.
    - a reset puts one back.
 
    There is no manual stock form any more. A product starts being tracked with its first batch.
-3. **Orders:** on the paid order, type the serial of each device you take from the shelf, or paste the link you get by scanning its QR. The device must be on the shelf and be the same product. It works immediately.
-4. **Parents activate devices themselves** (e.g. bought at an event): **Child → Activate a device**, then enter the serial. Rate limited, and the same error is shown for an unknown or already-used serial.
+3. **Orders:** ship any device of the ordered product from the shelf; nothing to assign. The parent activates each one with its serial (the order page shows "N devices to activate", and marking the order *shipped* reminds them). A device activated by a parent who has a paid order line for that product counts against that order (its stock was taken at checkout); otherwise it takes one unit. The admin order page shows "Activated by the parent: n of qty".
+4. **Parents activate devices** from **Child → Activate a device** (or the order page): serial + child. The child chosen at checkout is pre-selected. It works the same for devices bought elsewhere (e.g. at an event). Rate limited, and the same error is shown for an unknown or already-used serial.
 5. **Replacements:** enter the serial of a shelf device of the same type. The old device is retired.
-6. **Reset** (Admin → Devices → device): for a device that came back to you. It is unlinked, its scan history is deleted, and it goes back on the shelf. Only an admin can assign it again, because the previous family knows its serial.
+6. **Reset** (Admin → Devices → device): for a device that came back to you. It is unlinked, its scan history is deleted, and it goes back on the shelf. Parents can't activate it (the previous family knows its serial) until you press **Allow parent activation** just before shipping it to a new customer.
 7. **Write off** a damaged or missing shelf device.
 
 A device that is on the shelf (or written off) shows "This device is not activated yet" when scanned. Devices made before this change keep working, and get a serial the first time Admin → Devices is opened.
